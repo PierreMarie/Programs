@@ -1,7 +1,7 @@
 import RPi.GPIO as GPIO
 import time
 
-GPIO.setmode(GPIO.BCM)	#te
+GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 
 GPIO.setup(18, GPIO.OUT)
@@ -11,7 +11,7 @@ def my_callback(channel):
 	global prev
 	curre = time.time()
 	if 'prev' in globals():
-		#print("\n")	#test
+		#print("\n")
 		temp=1/(curre-prev)
 		print('%.1f Hz' % temp)
 	prev = curre
