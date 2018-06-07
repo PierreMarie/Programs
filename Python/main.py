@@ -12,7 +12,7 @@ def my_callback(channel):
 	curre = time.time()
 	if 'prev' in globals():
 		#print("\n")
-		temp=1/(curre-prev)
+		temp=1/(600*(curre-prev))
 		print('%.1f Hz' % temp)
 	prev = curre
 
