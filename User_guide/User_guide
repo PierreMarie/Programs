@@ -25,3 +25,8 @@ clone pour update la premiere fois
 
 Pour éviter l'erreur suivante : Modifications qui ne seront pas validées
 git add
+
+Pour annuler un commit + push
+git log
+git revert XXX
+git push
