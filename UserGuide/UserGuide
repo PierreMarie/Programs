@@ -1,0 +1,27 @@
+USER: PierreMarie
+
+…or create a new repository on the command line
+echo "# Programs" >> README.md
+git init
+git add README.md
+git commit -m "first commit"
+git remote add origin https://github.com/PierreMarie/Programs.git
+git push -u origin master
+
+
+…or push an existing repository from the command line
+git remote add origin https://github.com/PierreMarie/Programs.git
+git push -u origin master
+
+
+
+git commit -a --allow-empty-message -m ''
+git remote -v pour plus de precision
+git remote show origin
+
+
+pull pour update
+clone pour update la premiere fois
+
+Pour éviter l'erreur suivante : Modifications qui ne seront pas validées
+git add
