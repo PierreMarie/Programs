@@ -12,6 +12,11 @@
 // void delayMicrosecondsHard (unsigned int howLong)
 // void delayMicroseconds (unsigned int howLong)
 
+// void pullUpDnControl (int pin, int pud)	PUD_UP, PUD_DOWN, PUD_OFF
+
+// void pinMode (int pin, int mode)		INPUT, OUTPUT, PWM_OUTPUT, GPIO_CLOCK, SOFT_PWM_OUTPUT, SOFT_TONE_OUTPUT, PWM_TONE_OUTPUT
+// void digitalWrite (int pin, int value)	LOW, HIGH
+
 
 int main (void)
 {
