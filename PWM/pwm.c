@@ -4,9 +4,9 @@
 
 // void pwmSetMode (int mode)			PWM_MODE_BAL, PWM_MODE_MS 	default balanced (foireux)
 
-// void pwmWrite (int pin, int value)		value = 0 - 1024
-// void pwmSetRange (unsigned int range)	range ? - 4095
-// void pwmSetClock (int divisor)		range ? - 4095		default 1024
+// void pwmWrite (int pin, int value)		range 0 - 1024 	?
+// void pwmSetRange (unsigned int range)	range ? - 4096	?	This sets the resolution, the number of steps between 0 and 100% duty cycle. The default value is 1024.
+// void pwmSetClock (int divisor)		range 2 - 4095	?	default 1024 or 32 ?
 
 // PWM frequency = 19.2 MHz / ( pwmClock * pwmRange )
 // Min frequency = 1.14 Hz
