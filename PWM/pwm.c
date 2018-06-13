@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include "wiringPi.h"
 
+// void pwmSetMode (int mode)			PWM_MODE_BAL, PWM_MODE_MS 	default balanced (foireux)
+
 // void pwmWrite (int pin, int value)		value = 0 - 1024
 // void pwmSetRange (unsigned int range)	range ? - 4095
 // void pwmSetClock (int divisor)		range ? - 4095		default 1024
