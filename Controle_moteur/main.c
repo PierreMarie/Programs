@@ -4,8 +4,8 @@
 
 #include "wiringPi.h"
 
-#define SENS 100
-#define AVE 20
+#define SENS 2
+#define AVE 10
 #define CONS 14
 #define DELTA 3
 
@@ -19,23 +19,24 @@ pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 int main (void)
 {
 	char str[10];
-	int a, b, c, prev;
+	long int a, b, c, prev, tour, cpt2;
 	int tab[AVE] = {0}, i;
 	long int sum;
 	float temp;
 	
 	FILE* fichier = NULL;
 	
-	fichier = fopen("file.txt", "w+");
+	//fichier = fopen("file.txt", "w+");
 	
-	//fichier = fopen("file.txt", "a");
+	fichier = fopen("file.txt", "a");
 	
 	if (wiringPiSetup () == -1)
 	exit (1) ;
-
-	pinMode (25, INPUT) ;
-	pinMode (1, PWM_OUTPUT) ;
-	pwmWrite (1, 1024) ;
+	pinMode (24, INPUT) ;
+	//pinMode (1, PWM_OUTPUT) ;
+	//pwmWrite (1, 1024) ;
+	pullUpDnControl (25, PUD_UP);
+	
 	
 	//pullUpDnControl(25, PUD_DOWN);
 	
@@ -56,6 +57,8 @@ int main (void)
 	b = 0;		// 1
 	c = 0;		// 0
 	prev = 1;
+	tour = 0;
+	cpt2=0;
 	
 	do
 	{
@@ -80,7 +83,6 @@ int main (void)
 			temp=(float)sum/AVE;
 			//temp = b+c;
 			
-			printf("Vitesse : %.1f tr/s\t%d\t%d\n", (float)1/(0.001*temp), b, c);
 			b = 0;
 			c = 0;
 		}
@@ -93,14 +95,30 @@ int main (void)
 		{
 			c++;
 		}
+		
+		tour++;
+		
+		if( tour >= 600 )
+		{
+			tour = 0;
+			
+			cpt2++;
+			
+			if (cpt2==20)
+			{
+				cpt2=0;
+				printf("Vitesse : %.1f tr/s\n", (float)100000.0/(600.0*temp));
+			}
+		}
 
-		delay(1);
+		//delay(1);
+		delayMicroseconds(10);
 		
 		prev = a;
 		
 	}while(1);
 	
-	fclose(fichier);
+	//fclose(fichier);
 
 	return 0 ;
 }
