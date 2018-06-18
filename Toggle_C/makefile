@@ -3,7 +3,7 @@ all:		test
 test:		main.o
 		gcc -o test main.o -lwiringPi -lpthread
 
-main.o:		main.c 
+main.o: 	main.c 
 		gcc -o main.o -c main.c -lwiringPi -lpthread
 
 clean:
