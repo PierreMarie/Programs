@@ -30,3 +30,21 @@ Pour annuler un commit + push
 git log
 git revert XXX
 git push
+
+
+Alias : 
+
+nano ~/.bashrc
+source ~/.bashrc
+
+alias a='source ~/.bashrc'
+alias a1='sudo apt-get update'
+alias a2='sudo apt-get upgrade'
+alias d='wget -O /dev/null http://speedtest.wdc01.softlayer.com/downloads/test1000.zip'
+alias egrep='egrep --color=auto'
+alias fgrep='fgrep --color=auto'
+alias grep='grep --color=auto'
+alias ll='ls -l'
+alias ls='ls --color=auto'
+alias s='du -hs'
+alias t='/opt/vc/bin/vcgencmd measure_temp'
