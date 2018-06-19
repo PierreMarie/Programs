@@ -8,9 +8,9 @@
 #define AVE 20
 #define CONS 14
 #define DELTA 3
-#define REFERENCE 20
+#define REFERENCE 30
 #define SPEED_MIN 8
-#define SPEED_MAX 100
+#define SPEED_MAX 250
 #define SPEED_INC 0.0001
 
 void *thread_1(void *arg);
@@ -116,7 +116,7 @@ int main (void)
 			{
 				cpt2=0;
 				
-				speed_real = (float)100000.0/(600.0*temp);
+				speed_real = (float)100000.0/(1.0*temp);
 				printf("Vitesse : %.1f tr/s\t%f\n", speed_real, speed_reference);
 			}
 		}
@@ -134,12 +134,13 @@ int main (void)
 			{
 				if( speed_reference > SPEED_MIN )
 				{
-					speed_reference -= 0.0001;
+					speed_reference -= SPEED_INC;
 				}
 			}
 		}
 		
 		pwmWrite (1, speed_reference) ;
+		//pwmWrite (1, 20) ;
 
 		//delay(1);
 		delayMicroseconds(10);
