@@ -4,7 +4,7 @@ import time
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 
-GPIO.setup(25, GPIO.IN)
+GPIO.setup(19, GPIO.IN)
 
 def my_callback(channel):
 	global prev
@@ -19,7 +19,7 @@ def my_callback(channel):
 	#print("\n")
 
 #GPIO.add_event_detect(26, GPIO.RISING, callback=my_callback, bouncetime=1)
-GPIO.add_event_detect(25, GPIO.RISING, callback=my_callback)
+GPIO.add_event_detect(19, GPIO.RISING, callback=my_callback)
 
 try:
     while 1:

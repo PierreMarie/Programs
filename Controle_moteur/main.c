@@ -1,95 +1,88 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <pthread.h>
 
 #include "wiringPi.h"
 
-#define SENS 2
-#define AVE 20
-#define CONS 14
-#define DELTA 3
-#define REFERENCE 30
-#define SPEED_MIN 8
-#define SPEED_MAX 250
-#define SPEED_INC 0.0001
-
-void *thread_1(void *arg);
-void *thread_2(void *arg);
-
-long int cpt = 0;
-int consigne = 500;
-pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+#define MEAN 20
+#define CONSIGNE 30
+#define COMMANDE_MIN 8
+#define COMMANDE_MAX 250
+#define COMMANDE_INC 0.0001
+#define IT_DISPLAY 10000
+#define GAIN 1
 
 int main (void)
 {
-	char str[10];
-	long int a, b, c, prev, tour, cpt2;
-	int tab[AVE] = {0}, i;
+	long int a, b, c, cpt;
+	int tab_mean[MEAN]={0}, tab_median[MEAN]={0}, i, j, middle, tmp, prev;
 	long int sum;
-	float temp, speed_real, speed_reference;
+	float temp, speed_real, commande;
 	
-	FILE* fichier = NULL;
-	
-	//fichier = fopen("file.txt", "w+");
-	
-	fichier = fopen("file.txt", "a");
+	//FILE* fichier = NULL;
+	//fichier = fopen("file.txt", "a");
 	
 	if (wiringPiSetup () == -1)
 	exit (1) ;
-	pinMode (25, INPUT) ;
+	pinMode (24, INPUT) ;
 	pinMode (1, PWM_OUTPUT) ;
-	//pwmWrite (1, 1024) ;
 	//pullUpDnControl (25, PUD_UP);
-	
-	
-	//pullUpDnControl(25, PUD_DOWN);
-	
-	pthread_t thread1;
-	pthread_t thread2;
-	
-	/*
-	if(pthread_create(&thread1, NULL, thread_1, NULL) == -1) {
-	perror("pthread_create");
-	return EXIT_FAILURE;
-    }
-	
-	if(pthread_create(&thread2, NULL, thread_2, NULL) == -1) {
-	perror("pthread_create");
-	return EXIT_FAILURE;
-    }*/
 	
 	b = 0;		// 1
 	c = 0;		// 0
 	prev = 1;
-	tour = 0;
-	cpt2=0;
+	cpt=0;
 	
-	pwmWrite (1, REFERENCE) ;
-	speed_real = REFERENCE;
-	speed_reference = REFERENCE;
+	pwmWrite (1, 0) ;
+	speed_real = 0;
+	commande = 0;
+	temp = 0;
 	
 	do
 	{
-		a = digitalRead(25);
+		a = digitalRead(24);
 		//fprintf(fichier, "%d\n", a);
-		//fprintf(fichier, "ee\n");
 		
 		if ( prev==0 && a==1 )
-		{
-			
-			sum = 0;
+		{		
+			///********************************************************///	MEAN
+			//sum = 0;
 		
-			for( i=0; i<AVE-1; i++ )
+			for( i=0; i<MEAN-1; i++ )
 			{
-				tab[i] = tab[i+1];
-				sum += tab[i];
+				tab_mean[i] = tab_mean[i+1];
+				//sum += tab_mean[i];	
 			}
 			
-			tab[AVE-1] = b+c;
-			sum += tab[AVE-1];
+			tab_mean[MEAN-1] = b+c;
 			
-			temp=(float)sum/AVE;
-			//temp = b+c;
+			//sum += tab_mean[MEAN-1];
+			//temp=(float)sum/MEAN;
+			
+			///********************************************************///	MEDIAN
+			for( i=0; i<MEAN; i++ )
+			{
+				tab_median[i] = tab_mean[i];
+			}
+			
+			middle=MEAN/2;
+
+			for(i=0; i<MEAN; i++)
+			{
+				for(j=0; j<MEAN; j++)
+				{
+					if( j<(MEAN-1) )
+					{
+						if( tab_median[j]>tab_median[j+1] )
+						{
+							tmp=tab_median[j];
+							tab_median[j]=tab_median[j+1];
+							tab_median[j+1]=tmp;
+						}
+					}
+				}
+			}
+			
+			temp = (float)tab_median[middle];
 			
 			b = 0;
 			c = 0;
@@ -102,47 +95,61 @@ int main (void)
 		else
 		{
 			c++;
-		}
-		
-		tour++;
-		
-		if( tour >= 600 )
+		}	
+	
+		///********************************************************///	REGULATION
+		/*if( speed_real < CONSIGNE )
 		{
-			tour = 0;
-			
-			cpt2++;
-			
-			if (cpt2==20)
+			if( commande < COMMANDE_MAX )
 			{
-				cpt2=0;
-				
-				speed_real = (float)100000.0/(1.0*temp);
-				printf("Vitesse : %.1f tr/s\t%f\n", speed_real, speed_reference);
-			}
-		}
-		
-		if( speed_real < REFERENCE )
-		{
-			if( speed_reference < SPEED_MAX )
-			{
-				speed_reference += SPEED_INC;
+				commande += COMMANDE_INC;
 			}
 		}
 		else
 		{
-			if( speed_real > REFERENCE )
+			if( commande > CONSIGNE )
 			{
-				if( speed_reference > SPEED_MIN )
+				if( commande > COMMANDE_MIN )
 				{
-					speed_reference -= SPEED_INC;
+					commande -= COMMANDE_INC;
 				}
 			}
+		}*/
+		
+		commande = (float) GAIN * ( CONSIGNE - speed_real ) ;
+		
+		if( commande < COMMANDE_MIN )
+		{
+			commande = COMMANDE_MIN;
 		}
 		
-		pwmWrite (1, speed_reference) ;
+		if( commande > COMMANDE_MAX )
+		{
+			commande = COMMANDE_MAX;
+		}
+		
+		pwmWrite (1, commande) ;
 		//pwmWrite (1, 20) ;
+		
+		cpt++;
+		
+		///********************************************************///	DISPLAY
+		if ( cpt==IT_DISPLAY )
+		{
+			cpt=0;
+			
+			if( temp != 0.0 )
+			{
+				speed_real = (float)100000.0/(1.0*temp);
+			}
+			else
+			{
+				speed_real = 0;
+			}
+			
+			printf("Vitesse : %.1f tr/s\t%f\n", speed_real, commande);
+		}
 
-		//delay(1);
 		delayMicroseconds(10);
 		
 		prev = a;
@@ -152,92 +159,4 @@ int main (void)
 	//fclose(fichier);
 
 	return 0 ;
-}
-
-void detect_threshold()
-{
-	static int tab[SENS]={0};
-	int i, test = 1;
-		
-	for (i=0; i<SENS; i++ )
-	{			
-		if( tab[i] == 0 ) test = 0;
-	}
-	
-	if( (digitalRead(25)==LOW) && (test==1))
-	{
-		pthread_mutex_lock(&mutex);
-		cpt++;
-		pthread_mutex_unlock(&mutex);
-		//printf("\n%ld", cpt);
-	}
-	
-	for( i=0; i<SENS-1; i++ )
-	{
-		tab[i] = tab[i+1];
-	}
-	
-	if( digitalRead(25)==HIGH )
-	{
-		tab[SENS-1]=1;
-	}
-	else
-	{
-		tab[SENS-1]=0;
-	}
-}
-
-void *thread_1(void *arg)
-{
-    printf("Nous sommes dans le thread1\n");
-
-	do
-	{
-		detect_threshold();
-		
-	}while(1);
-	
-    (void) arg;
-    pthread_exit(NULL);
-}
-
-void *thread_2(void *arg)
-{
-    int tab[AVE] = {0}, i;
-	long int sum;
-	
-	printf("Nous sommes dans le thread2\n");
-    
-	do
-	{
-		delay(100);
-		
-		sum = 0;
-		
-		for( i=0; i<AVE-1; i++ )
-		{
-			tab[i] = tab[i+1];
-			sum += tab[i];
-		}
-		
-		tab[AVE-1] = cpt*10;
-		sum += tab[AVE-1];
-		
-		printf("Vitesse : %.1f tr/s\n", (float)sum/AVE);
-		/*
-		if((float)sum/AVE < CONS) 	consigne += DELTA;
-		else						consigne -= DELTA;
-		
-		pwmWrite (1, consigne) ;
-		
-		printf("Consigne : %d\n\n", consigne);*/
-		
-		pthread_mutex_lock(&mutex);
-		cpt = 0;
-		pthread_mutex_unlock(&mutex);
-		
-	}while(1);
-	
-    (void) arg;
-    pthread_exit(NULL);
 }
