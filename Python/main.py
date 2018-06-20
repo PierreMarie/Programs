@@ -4,15 +4,14 @@ import time
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 
-#GPIO.setup(18, GPIO.OUT)
-GPIO.setup(26, GPIO.IN)
+GPIO.setup(25, GPIO.IN)
 
 def my_callback(channel):
 	global prev
 	curre = time.time()
 	if 'prev' in globals():
 		#print("\n")
-		temp=1/((curre-prev))
+		temp=1/(curre-prev)
 		print('%.1f Hz' % temp)
 	prev = curre
 
@@ -20,13 +19,13 @@ def my_callback(channel):
 	#print("\n")
 
 #GPIO.add_event_detect(26, GPIO.RISING, callback=my_callback, bouncetime=1)
-GPIO.add_event_detect(26, GPIO.RISING, callback=my_callback)
+GPIO.add_event_detect(25, GPIO.RISING, callback=my_callback)
 
 try:
     while 1:
 		#if 0:
 			#break
-		time.sleep(0.01)
+		time.sleep(1)
 
 #		GPIO.output(18, GPIO.HIGH)
 

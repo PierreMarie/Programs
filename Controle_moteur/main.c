@@ -36,10 +36,10 @@ int main (void)
 	
 	if (wiringPiSetup () == -1)
 	exit (1) ;
-	pinMode (24, INPUT) ;
+	pinMode (25, INPUT) ;
 	pinMode (1, PWM_OUTPUT) ;
 	//pwmWrite (1, 1024) ;
-	pullUpDnControl (25, PUD_UP);
+	//pullUpDnControl (25, PUD_UP);
 	
 	
 	//pullUpDnControl(25, PUD_DOWN);
