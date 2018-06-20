@@ -1,52 +1,121 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "wiringPi.h"
+#include <math.h>
+#include <string.h>
+#include <time.h>
 
-// void pwmSetMode (int mode)			PWM_MODE_BAL, PWM_MODE_MS 	default balanced (foireux)
+#define MAX_INT 30
+#define SIZE_STR 3
+#define FLOAT_DIVIDER 3
 
-// void pwmWrite (int pin, int value)		range 0 - 1024 	?
-// void pwmSetRange (unsigned int range)	range ? - 4096	?	This sets the resolution, the number of steps between 0 and 100% duty cycle. The default value is 1024.
-// void pwmSetClock (int divisor)		range 2 - 4095	?	default 1024 or 32 ?
+void generate_str(float* str, int size)
+{
+	int i, k, test;
+	float tmp;
 
-// PWM frequency = 19.2 MHz / ( pwmClock * pwmRange )
-// Min frequency = 1.14 Hz
+	for(i=0; i<size; i++)
+	{
+		//do
+		//{
+		//	test=0;
+			//tmp=(rand()%MAX_INT)+1;
+			tmp=(float)((rand()%MAX_INT)+1)/FLOAT_DIVIDER;
 
-// void delayMicrosecondsHard (unsigned int howLong)
-// void delayMicroseconds (unsigned int howLong)
+		/*	for(k=0; k<i; k++)
+			{
+				if( tmp==str[k] )
+				{
+					test=1;
+				}
+			}
 
-// void pullUpDnControl (int pin, int pud)	PUD_UP, PUD_DOWN, PUD_OFF
+		}while(test);*/
 
-// void pinMode (int pin, int mode)		INPUT, OUTPUT, PWM_OUTPUT, GPIO_CLOCK, SOFT_PWM_OUTPUT, SOFT_TONE_OUTPUT, PWM_TONE_OUTPUT
-// void digitalWrite (int pin, int value)	LOW, HIGH
+		str[i] = tmp;
+	}
+}
 
+int calculate_size(float* str)
+{
+	int i=0;
+
+	do
+	{
+		if( str[i]!=0 )
+		{
+			i++;
+		}
+		else
+		{
+			return i;
+		}
+
+	}while( i<(SIZE_STR-1) );
+
+	return SIZE_STR;
+}
+
+void class(float* str)
+{
+	int i, j, size=calculate_size(str);
+	float tmp;
+
+	for(i=0; i<size; i++)
+	{
+		for(j=0; j<size; j++)
+		{
+			if( j<(size-1) )
+			{
+				if( str[j]>str[j+1] )
+				{
+					tmp=str[j];
+					str[j]=str[j+1];
+					str[j+1]=tmp;
+				}
+			}
+		}
+	}
+}
+
+void calculate_median(float* str, int size)
+{
+	int middle = size/2;
+	
+	printf("\nMiddle index : %d\tMedian : %.1f\n\n", middle, str[middle]);
+}
+
+void display_str(float* str, int size)
+{
+	int i;
+
+	printf("\nString: ");
+
+	for(i=0; i<size; i++)
+	{
+		if( i==(size-1) )
+		{
+			printf("%.1f", str[i]);
+		}
+		else
+		{
+			printf("%.1f, ", str[i]);
+		}
+	}
+
+	printf("\n\n");
+}
 
 int main (void)
 {
-	int bright;
-
-	if (wiringPiSetup () == -1)
-	exit (1) ;
-
-	pinMode (1, PWM_OUTPUT) ;
-	pinMode (24, OUTPUT) ;
+	float str[SIZE_STR]={0};
 	
-	digitalWrite (24, HIGH);
-
-	for (;;)
-	{
-	for (bright = 17 ; bright < 40 ; ++bright)
-	{
-		pwmWrite (1, bright) ;
-		delay (1000) ;
-	}
-
-	for (bright = 40 ; bright >= 17 ; --bright)
-	{
-		pwmWrite (1, bright) ;
-		delay (1000) ;
-	}
-
-	}
+	srand(time(NULL));
+	
+	generate_str(str, SIZE_STR);
+	display_str(str, SIZE_STR);
+	class(str);
+	display_str(str, SIZE_STR);
+	calculate_median(str, SIZE_STR);
 
 	return 0 ;
 }
