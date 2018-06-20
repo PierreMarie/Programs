@@ -3,13 +3,13 @@
 
 #include "wiringPi.h"
 
-#define MEAN 20
-#define CONSIGNE 30
-#define COMMANDE_MIN 8
-#define COMMANDE_MAX 250
+#define MEAN 10
+#define CONSIGNE 40.0
+#define COMMANDE_MIN 8.0
+#define COMMANDE_MAX 250.0
 #define COMMANDE_INC 0.0001
 #define IT_DISPLAY 10000
-#define GAIN 1
+#define GAIN 0.00002
 
 int main (void)
 {
@@ -32,10 +32,12 @@ int main (void)
 	prev = 1;
 	cpt=0;
 	
-	pwmWrite (1, 0) ;
+	commande = CONSIGNE;
+	pwmWrite (1, commande) ;
 	speed_real = 0;
-	commande = 0;
 	temp = 0;
+	
+	pwmWrite (1, 30) ;
 	
 	do
 	{
@@ -45,12 +47,12 @@ int main (void)
 		if ( prev==0 && a==1 )
 		{		
 			///********************************************************///	MEAN
-			//sum = 0;
+			sum = 0;
 		
 			for( i=0; i<MEAN-1; i++ )
 			{
 				tab_mean[i] = tab_mean[i+1];
-				//sum += tab_mean[i];	
+				sum += tab_mean[i];	
 			}
 			
 			tab_mean[MEAN-1] = b+c;
@@ -116,7 +118,16 @@ int main (void)
 			}
 		}*/
 		
-		commande = (float) GAIN * ( CONSIGNE - speed_real ) ;
+		//commande = (float) GAIN * abs( CONSIGNE - speed_real ) ;
+		
+		if( speed_real < CONSIGNE )
+		{
+			commande += (float) GAIN * abs( CONSIGNE - speed_real );
+		}
+		else
+		{
+			commande -= (float) GAIN * abs( CONSIGNE - speed_real );
+		}
 		
 		if( commande < COMMANDE_MIN )
 		{
