@@ -4,9 +4,9 @@
 #include <string.h>
 #include <time.h>
 
-#define MAX_INT 30
-#define SIZE_STR 3
-#define FLOAT_DIVIDER 3
+#define MAX_INT 10
+#define SIZE_STR 20
+#define FLOAT_DIVIDER 1.1
 
 void generate_str(float* str, int size)
 {
@@ -39,20 +39,12 @@ int calculate_size(float* str)
 {
 	int i=0;
 
-	do
+	while( str[i]!=0 )
 	{
-		if( str[i]!=0 )
-		{
-			i++;
-		}
-		else
-		{
-			return i;
-		}
-
-	}while( i<(SIZE_STR-1) );
-
-	return SIZE_STR;
+		i++;
+	}
+	
+	return i;
 }
 
 void class(float* str)
@@ -77,32 +69,42 @@ void class(float* str)
 	}
 }
 
-void calculate_median(float* str, int size)
+void calculate_median(float* str)
 {
-	int middle = size/2;
+	int middle;
+
+	middle = calculate_size(str) / 2;
 	
-	printf("\nMiddle index : %d\tMedian : %.1f\n\n", middle, str[middle]);
+	printf("\nMiddle index : \t\t%d\tMedian : \t%.1f\n\n", middle, str[middle]);
 }
 
-void display_str(float* str, int size)
+void calculate_mean(float* str)
 {
-	int i;
+	int i, size = calculate_size(str);
+	float cpt = 0.0;
+	
+	for( i=0; i<size; i++ )
+	{
+		cpt += str[i];
+	}
+	
+	cpt /= size;
+	
+	printf("\nNumber of elements : \t%d\tMean : \t\t%.1f\n\n", size, cpt);
+}
+
+void display_str(float* str)
+{
+	int i = 0;
 
 	printf("\nString: ");
 
-	for(i=0; i<size; i++)
+	for( i=0; i<calculate_size(str)-1; i++)
 	{
-		if( i==(size-1) )
-		{
-			printf("%.1f", str[i]);
-		}
-		else
-		{
-			printf("%.1f, ", str[i]);
-		}
+		printf("%.1f, ", str[i]);
 	}
-
-	printf("\n\n");
+	
+	printf("%.1f\n\n", str[i]);
 }
 
 int main (void)
@@ -112,10 +114,11 @@ int main (void)
 	srand(time(NULL));
 	
 	generate_str(str, SIZE_STR);
-	display_str(str, SIZE_STR);
+	display_str(str);
 	class(str);
-	display_str(str, SIZE_STR);
-	calculate_median(str, SIZE_STR);
+	display_str(str);
+	calculate_median(str);
+	calculate_mean(str);
 
 	return 0 ;
 }
