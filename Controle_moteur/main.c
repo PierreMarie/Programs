@@ -4,16 +4,18 @@
 #include "wiringPi.h"
 
 #define MEAN 10
-#define CONSIGNE 30.0
+#define CONSIGNE 20.0
 #define COMMANDE_MIN 0.0
-#define COMMANDE_MAX 100.0
+#define COMMANDE_MAX 50.0
 #define COMMANDE_INC 0.0001
 #define IT_DISPLAY 10000
-//#define GAIN 0.00002
-#define GAIN 0.0001
 #define MAX_COUNT 100000.0			// 1 tr/s
 #define LOOP_DURATION 10
 #define GAIN_TEMPO 1.0E6 / LOOP_DURATION
+
+#define Te 0.00001
+#define Kp 0.001					//#define GAIN 0.00002
+#define Ti 10
 
 // 	Correcteur: u(k) = u(k-1) + Kp*( Te/Ti + 1 )*e(k) - Kp*e(k-1) 
 //	J = 0,002.10-6 Kg.m2
@@ -43,8 +45,6 @@ int main (void)
 	pwmWrite (1, commande) ;
 	speed_real = 0;
 	temp = 0.0;
-	
-	pwmWrite (1, 30) ;
 	
 	do
 	{
@@ -136,18 +136,14 @@ int main (void)
 			}
 		}*/
 		
-		///*************************************///	Classique
-		//commande = (float) GAIN * abs( CONSIGNE - speed_real ) ;
+		///*************************************///	P
+		commande += Kp * ( CONSIGNE - speed_real );
+
+		///*************************************///	PI
+		//commande +=  Kp * ( CONSIGNE - speed_real ) + ( Kp * Te / Ti * ( CONSIGNE - speed_real ) );
+
 		
-		//if( speed_real < CONSIGNE )
-		{
-			commande += (float) GAIN * ( CONSIGNE - speed_real );
-		}
-		//else
-		{
-			//commande -= (float) GAIN * abs( CONSIGNE - speed_real );
-		}
-		
+		///*************************************///	Ecretage
 		if( commande < COMMANDE_MIN )
 		{
 			commande = COMMANDE_MIN;
@@ -159,7 +155,6 @@ int main (void)
 		}
 		
 		pwmWrite (1, commande) ;
-		//pwmWrite (1, 20) ;
 		
 		cpt++;
 		
