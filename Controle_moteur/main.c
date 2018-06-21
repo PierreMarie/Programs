@@ -4,12 +4,19 @@
 #include "wiringPi.h"
 
 #define MEAN 10
-#define CONSIGNE 40.0
-#define COMMANDE_MIN 8.0
-#define COMMANDE_MAX 250.0
+#define CONSIGNE 30.0
+#define COMMANDE_MIN 0.0
+#define COMMANDE_MAX 100.0
 #define COMMANDE_INC 0.0001
 #define IT_DISPLAY 10000
-#define GAIN 0.00002
+//#define GAIN 0.00002
+#define GAIN 0.0001
+#define MAX_COUNT 100000.0			// 1 tr/s
+#define LOOP_DURATION 10
+#define GAIN_TEMPO 1.0E6 / LOOP_DURATION
+
+// 	Correcteur: u(k) = u(k-1) + Kp*( Te/Ti + 1 )*e(k) - Kp*e(k-1) 
+//	J = 0,002.10-6 Kg.m2
 
 int main (void)
 {
@@ -35,7 +42,7 @@ int main (void)
 	commande = CONSIGNE;
 	pwmWrite (1, commande) ;
 	speed_real = 0;
-	temp = 0;
+	temp = 0.0;
 	
 	pwmWrite (1, 30) ;
 	
@@ -98,8 +105,19 @@ int main (void)
 		{
 			c++;
 		}	
-	
+		
+		///********************************************************///	UPDATE REAL SPEED
+		if( (temp == 0.0) || (temp > MAX_COUNT) )
+		{
+			speed_real = 0.0;
+		}
+		else
+		{
+			speed_real = (float)GAIN_TEMPO/(1.0*temp);
+		}
+		
 		///********************************************************///	REGULATION
+		///*************************************///	Fourchette
 		/*if( speed_real < CONSIGNE )
 		{
 			if( commande < COMMANDE_MAX )
@@ -118,15 +136,16 @@ int main (void)
 			}
 		}*/
 		
+		///*************************************///	Classique
 		//commande = (float) GAIN * abs( CONSIGNE - speed_real ) ;
 		
-		if( speed_real < CONSIGNE )
+		//if( speed_real < CONSIGNE )
 		{
-			commande += (float) GAIN * abs( CONSIGNE - speed_real );
+			commande += (float) GAIN * ( CONSIGNE - speed_real );
 		}
-		else
+		//else
 		{
-			commande -= (float) GAIN * abs( CONSIGNE - speed_real );
+			//commande -= (float) GAIN * abs( CONSIGNE - speed_real );
 		}
 		
 		if( commande < COMMANDE_MIN )
@@ -149,19 +168,10 @@ int main (void)
 		{
 			cpt=0;
 			
-			if( temp != 0.0 )
-			{
-				speed_real = (float)100000.0/(1.0*temp);
-			}
-			else
-			{
-				speed_real = 0;
-			}
-			
-			printf("Vitesse : %.1f tr/s\t%f\n", speed_real, commande);
+			printf("Vitesse : %.1f tr/s\t%f\t%f\n", speed_real, commande, temp);
 		}
 
-		delayMicroseconds(10);
+		delayMicroseconds(LOOP_DURATION);
 		
 		prev = a;
 		
