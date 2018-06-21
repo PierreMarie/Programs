@@ -3,6 +3,8 @@
 
 #include "wiringPi.h"
 
+///	CYCLE TOTAL = 30 µs
+
 #define MEAN 10
 #define CONSIGNE 20.0
 #define COMMANDE_MIN 0.0

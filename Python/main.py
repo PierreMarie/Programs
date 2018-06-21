@@ -15,7 +15,7 @@ def my_callback(channel):
     
     prev = curre
 
-#GPIO.add_event_detect(26, GPIO.RISING, callback=my_callback, bouncetime=1)
+#GPIO.add_event_detect(19, GPIO.RISING, callback=my_callback, bouncetime=1)
 GPIO.add_event_detect(19, GPIO.RISING, callback=my_callback)
 
 try:
