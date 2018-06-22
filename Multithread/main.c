@@ -2,11 +2,13 @@
 #include <stdlib.h>
 #include <pthread.h>
 
+#include "wiringPi.h"
+
 void *thread_1(void *arg);
 void *thread_2(void *arg);
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-int shared;
+int shared = 0;
 
 int main (void)
 {
@@ -25,7 +27,8 @@ int main (void)
 	
 	do
 	{
-	
+	printf("%d\n", shared);
+		delay(1000);
 	}while(1);
 	
 	return 0 ;
@@ -34,12 +37,17 @@ int main (void)
 void *thread_1(void *arg)
 {
 	printf("Nous sommes dans le thread1\n");
+	
+	pthread_mutex_lock(&mutex);
+	shared = 3;
+	pthread_mutex_unlock(&mutex);
+	delay(4000);
 
 	do
 	{
-		pthread_mutex_lock(&mutex);
-		shared = 0;
-		pthread_mutex_unlock(&mutex);
+		
+		
+		//pthread_mutex_unlock(&mutex);
 	
 	}while(1);
 	
@@ -50,12 +58,17 @@ void *thread_1(void *arg)
 void *thread_2(void *arg)
 {
 	printf("Nous sommes dans le thread2\n");
+	
+	delay(2000);
+	
+	pthread_mutex_lock(&mutex);
+	shared = 2;
+	pthread_mutex_unlock(&mutex);
     
 	do
 	{
-		pthread_mutex_lock(&mutex);
-		shared = 0;
-		pthread_mutex_unlock(&mutex);
+		
+		
 		
 	}while(1);
 	

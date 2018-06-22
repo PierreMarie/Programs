@@ -24,8 +24,6 @@ GPIO.setwarnings(False)
 
 GPIO.setup(19, GPIO.OUT)
 
-var = 0.01
-
 import os
 
 # Windows
@@ -123,12 +121,16 @@ class KBHit:
     
 # Test         
 
-duration=0.01
+duration=0.1
 
 if __name__ == "__main__":
     kb = KBHit()
     print('Hit any key, or ESC to exit')
     while 1:
+        duration=duration-0.01
+	#time.sleep(0.0001)
+        if duration <= 0.00001:
+	    duration=0.1
         if kb.kbhit():
             c = kb.getch()
             if ord(c) == 97:
