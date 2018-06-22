@@ -6,19 +6,19 @@
 
 ///	CYCLE TOTAL = 30 µs
 
-#define MEAN 10
+#define MEAN 5
 #define CONSIGNE 30.0
 #define COMMANDE_MIN 0.0
-#define COMMANDE_MAX 200.0
-#define COMMANDE_INC 0.0001
+#define COMMANDE_MAX 100.0
+#define COMMANDE_INC 0.1
 #define IT_DISPLAY 1
-#define MAX_COUNT 100000.0			// 1 tr/s
+#define MAX_COUNT 10000.0			// 1 tr/s
 #define LOOP_DURATION 10
 #define GAIN_TEMPO 1.0E6 / LOOP_DURATION
 
 #define Te 0.00001
-#define Kp 0.5					//#define GAIN 0.00002
-#define Ti 10
+//#define Kp 1.0					//#define GAIN 0.00002 0.4
+#define Ti 0.01
 
 // 	Correcteur: u(k) = u(k-1) + Kp*( Te/Ti + 1 )*e(k) - Kp*e(k-1) 
 //	J = 0,002.10-6 Kg.m2
@@ -28,12 +28,13 @@ pthread_mutex_t mutex_speed = PTHREAD_MUTEX_INITIALIZER;
 
 void *thread_1(void *arg);
 
-float tab_speed[MEAN]={0.0}, speed_real;
+float tab_speed[MEAN]={0.0}, speed_real, Kp, erreur;
+long int b, c;
 
 int main (void)
 {
 	char test_dead_lock, prev;
-	long int a, b, c, tab_mean[MEAN]={0}, tab_median[MEAN]={0}, tmp, cpt;
+	long int a, tab_mean[MEAN]={0}, tab_median[MEAN]={0}, tmp, cpt;
 	int i, j, middle;
 	long int sum;
 	float temp, commande;
@@ -58,10 +59,10 @@ int main (void)
 	speed_real = 0.0;
 	temp = 0.0;
 	
-	/*if(pthread_create(&thread1, NULL, thread_1, NULL) == -1) {
+	if(pthread_create(&thread1, NULL, thread_1, NULL) == -1) {
 	perror("pthread_create");
 	return EXIT_FAILURE;
-    }*/
+    }
 	
 	do
 	{
@@ -165,7 +166,46 @@ int main (void)
 			}*/
 			
 			///*************************************///	P
-			commande += Kp * ( CONSIGNE - speed_real );
+			erreur = CONSIGNE - speed_real;
+			
+			/*if( erreur > 10.0 )
+			{
+				Kp = 1.0;
+			}
+			else
+			{
+				if( erreur > 5.0 )
+				{
+					Kp = 1.0;
+				}
+				else
+				{
+					if( erreur > 2.0 )
+					{
+						Kp = 0.5;
+					}
+					else
+					{
+						if( erreur > 1.0 )
+						{
+							Kp = 0.1;
+						}
+						else
+						{
+							if( erreur > 0.5 )
+							{
+								Kp = 0.05;
+							}
+						}
+					}
+				}
+			}*/
+			
+			Kp = (float) 0.02 * abs(erreur); 
+			Kp=0.1;
+			
+			commande += Kp * erreur;
+			//if (erreur<0) commande *= -1.0;
 
 			///*************************************///	PI
 			//commande +=  Kp * ( CONSIGNE - speed_real ) + ( Kp * Te / Ti * ( CONSIGNE - speed_real ) );
@@ -183,7 +223,11 @@ int main (void)
 				commande = COMMANDE_MAX;
 			}
 			
+			pthread_mutex_lock(&mutex_speed);
+			
 			pwmWrite (1, commande) ;
+			
+			pthread_mutex_unlock(&mutex_speed);
 			
 			
 			///********************************************************///	DISPLAY
@@ -232,7 +276,7 @@ void *thread_1(void *arg)
 	
 	do
 	{
-		pthread_mutex_lock(&mutex_speed);
+		/*pthread_mutex_lock(&mutex_speed);
 		
 		if( speed_real > 1.0 )
 		{
@@ -264,8 +308,19 @@ void *thread_1(void *arg)
 		
 		pthread_mutex_unlock(&mutex_speed);
 		
-		//delayMicroseconds(LOOP_DURATION*10);
-		delay(500);
+		//delayMicroseconds(LOOP_DURATION*10);*/
+		
+		pthread_mutex_lock(&mutex_speed);
+		
+		if( b > MAX_COUNT || c > MAX_COUNT )
+		{
+			pwmWrite (1, 100) ;
+			delay(10);
+		}
+		
+		pthread_mutex_unlock(&mutex_speed);
+		
+		delay(100);
 	
 	}while(1);
 	
