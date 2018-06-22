@@ -6,9 +6,9 @@
 ///	CYCLE TOTAL = 30 µs
 
 #define MEAN 10
-#define CONSIGNE 20.0
+#define CONSIGNE 30.0
 #define COMMANDE_MIN 0.0
-#define COMMANDE_MAX 50.0
+#define COMMANDE_MAX 200.0
 #define COMMANDE_INC 0.0001
 #define IT_DISPLAY 10000
 #define MAX_COUNT 100000.0			// 1 tr/s
@@ -16,7 +16,7 @@
 #define GAIN_TEMPO 1.0E6 / LOOP_DURATION
 
 #define Te 0.00001
-#define Kp 0.001					//#define GAIN 0.00002
+#define Kp 0.0001					//#define GAIN 0.00002
 #define Ti 10
 
 // 	Correcteur: u(k) = u(k-1) + Kp*( Te/Ti + 1 )*e(k) - Kp*e(k-1) 
@@ -24,10 +24,11 @@
 
 int main (void)
 {
+	char test_dead_lock;
 	long int a, b, c, cpt;
 	int tab_mean[MEAN]={0}, tab_median[MEAN]={0}, i, j, middle, tmp, prev;
 	long int sum;
-	float temp, speed_real, commande;
+	float temp, speed_real, commande, tab_speed[MEAN]={0.0}, val_dead_lock;
 	
 	//FILE* fichier = NULL;
 	//fichier = fopen("file.txt", "a");
@@ -109,7 +110,7 @@ int main (void)
 		}	
 		
 		///********************************************************///	UPDATE REAL SPEED
-		if( (temp == 0.0) || (temp > MAX_COUNT) )
+		if( (temp == 0.0) || (temp > MAX_COUNT) || (test_dead_lock == 1) )
 		{
 			speed_real = 0.0;
 		}
@@ -117,6 +118,31 @@ int main (void)
 		{
 			speed_real = (float)GAIN_TEMPO/(1.0*temp);
 		}
+		
+		///********************************************************///	TEST DEAD LOCK
+		test_dead_lock = 0;
+		
+		for( i=0; i<MEAN-1; i++ )
+		{
+			tab_speed[i] = tab_speed[i+1];
+		}
+		
+		tab_speed[MEAN-1] = speed_real;
+		
+		if( speed_real > 10.0 )
+		{
+			test_dead_lock = 1;
+		}
+		
+		val_dead_lock = tab_speed[0];
+		
+		for( i=1; i<MEAN; i++ )
+		{
+			if( val_dead_lock != tab_speed[i] ) test_dead_lock = 0;
+		}
+		
+		if(test_dead_lock) printf("\n\nLOCK !!\n\n");
+		
 		
 		///********************************************************///	REGULATION
 		///*************************************///	Fourchette
@@ -157,6 +183,7 @@ int main (void)
 		}
 		
 		pwmWrite (1, commande) ;
+		//pwmWrite (1, 30) ;
 		
 		cpt++;
 		
@@ -165,7 +192,7 @@ int main (void)
 		{
 			cpt=0;
 			
-			printf("Vitesse : %.1f tr/s\t%f\t%f\n", speed_real, commande, temp);
+			printf("Vitesse : %f tr/s\t%f\t%f\n", speed_real, commande, temp);
 		}
 
 		delayMicroseconds(LOOP_DURATION);
