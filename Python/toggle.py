@@ -127,10 +127,10 @@ if __name__ == "__main__":
     kb = KBHit()
     print('Hit any key, or ESC to exit')
     while 1:
-        duration=duration-0.01
+        #duration=duration-0.00001
 	#time.sleep(0.0001)
-        if duration <= 0.00001:
-	    duration=0.1
+        #if duration <= 0.0001:
+            #duration=0.1
         if kb.kbhit():
             c = kb.getch()
             if ord(c) == 97:
