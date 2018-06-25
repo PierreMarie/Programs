@@ -7,13 +7,13 @@
 ///	CYCLE TOTAL = 30 µs
 
 #define MEAN 5
-#define CONSIGNE 30.0
+#define CONSIGNE 0.0
 #define COMMANDE_MIN 0.0
-#define COMMANDE_MAX 100.0
+#define COMMANDE_MAX 500.0
 #define COMMANDE_INC 0.1
 #define IT_DISPLAY 1
-#define MAX_COUNT 10000.0			// 1 tr/s
-#define LOOP_DURATION 10
+#define MAX_COUNT 100000.0			// 1 tr/s
+#define LOOP_DURATION 1
 #define GAIN_TEMPO 1.0E6 / LOOP_DURATION
 
 #define Te 0.00001
@@ -33,7 +33,7 @@ long int b, c;
 
 int main (void)
 {
-	char test_dead_lock, prev;
+	char test_dead_lock, prev, val=0;
 	long int a, tab_mean[MEAN]={0}, tab_median[MEAN]={0}, tmp, cpt;
 	int i, j, middle;
 	long int sum;
@@ -41,14 +41,16 @@ int main (void)
 	
 	pthread_t thread1;
 	
-	//FILE* fichier = NULL;
-	//fichier = fopen("file.txt", "a");
+	FILE* fichier = NULL;
+	fichier = fopen("file.txt", "w+");
 	
 	if (wiringPiSetup () == -1)
 	exit (1) ;
 	pinMode (24, INPUT) ;
 	pinMode (1, PWM_OUTPUT) ;
 	//pullUpDnControl (25, PUD_UP);
+	
+	//pinMode (29, OUTPUT) ;
 	
 	b = 0;		// 1
 	c = 0;		// 0
@@ -66,8 +68,10 @@ int main (void)
 	
 	do
 	{
+		
+		
 		a = digitalRead(24);
-		//fprintf(fichier, "%d\n", a);
+		
 		
 		if ( prev==0 && a==1 )
 		{		
@@ -125,6 +129,10 @@ int main (void)
 			{
 				speed_real = (float)GAIN_TEMPO/(1.0*temp);
 			}
+			
+			fprintf(fichier, "%f\n", speed_real);
+			val ^= 0x01;
+		digitalWrite(29, val);
 			
 			//pthread_mutex_unlock(&mutex_speed);
 			
@@ -225,7 +233,8 @@ int main (void)
 			
 			pthread_mutex_lock(&mutex_speed);
 			
-			pwmWrite (1, commande) ;
+			//pwmWrite (1, commande) ;
+			//pwmWrite (1, 40) ;
 			
 			pthread_mutex_unlock(&mutex_speed);
 			
@@ -234,7 +243,7 @@ int main (void)
 			//pthread_mutex_lock(&mutex_speed);
 			cpt++;
 			
-			if(cpt > IT_DISPLAY)
+			//if(cpt > IT_DISPLAY)
 			{
 				printf("Speed : %.1f\t\tCmd : %.1f\t\tRef : %.1f\n", speed_real, commande, CONSIGNE);
 				cpt = 0;
@@ -314,13 +323,16 @@ void *thread_1(void *arg)
 		
 		if( b > MAX_COUNT || c > MAX_COUNT )
 		{
-			pwmWrite (1, 100) ;
-			delay(10);
+			//pwmWrite (1, 100) ;
+			//delay(10);
 		}
 		
 		pthread_mutex_unlock(&mutex_speed);
 		
-		delay(100);
+		pwmWrite (1, 15) ;
+		delay(2000);
+		pwmWrite (1, 100) ;
+		delay(2000);
 	
 	}while(1);
 	
