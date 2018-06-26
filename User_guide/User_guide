@@ -48,4 +48,5 @@ alias ll='ls -l'
 alias ls='ls --color=auto'
 alias s='du -hs'
 alias t='/opt/vc/bin/vcgencmd measure_temp'
-alias gitc='git commit -a --allow-empty-message -m \'\''
+alias gitc="git commit -a --allow-empty-message -m ''"
+alias tar='sudo tar --lzma -cvf'
