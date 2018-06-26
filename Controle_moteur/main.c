@@ -17,9 +17,12 @@
 #define PERIODE_ECH 100
 #define UNBLOCKING 100
 
-#define Te 0.00001
-#define KP 0.1					//#define GAIN 0.00002 0.4
+#define Te 0.1
+#define Kp 0.1					//#define GAIN 0.00002 0.4
 #define Ti 0.01
+
+#define b0 0.5					//	-Kp
+#define b1 1.0					//	(Kp + Kp*Te/Ti)
 
 // 	Correcteur: u(k) = u(k-1) + Kp*( Te/Ti + 1 )*e(k) - Kp*e(k-1) 
 //	J = 0,002.10-6 Kg.m2
@@ -29,7 +32,7 @@ pthread_mutex_t mutex_speed_real = PTHREAD_MUTEX_INITIALIZER;
 
 void *thread_1(void *arg);
 
-float speed_real, Kp=KP, erreur, commande;
+float speed_real, erreur, erreur_prev, commande, commande_prev;
 long int b, c;
 char update;
 
@@ -58,9 +61,15 @@ int main (void)
 	prev = 1;
 	
 	commande = CONSIGNE;
-	pwmWrite (1, commande) ;
+	commande_prev = CONSIGNE;
+	
+	erreur = 0.0;
+	erreur_prev = 0.0;
+	
 	speed_real = 0.0;
 	temp = 0.0;
+	
+	pwmWrite (1, commande);
 	
 	update = 0;
 	
@@ -127,32 +136,6 @@ int main (void)
 			pthread_mutex_lock(&mutex_update);
 			update = 1;
 			pthread_mutex_unlock(&mutex_update);
-			
-			
-			///********************************************************///	REGULATION
-			erreur = CONSIGNE - speed_real;
-			///*************************************///	Fourchette
-			/*if( speed_real < CONSIGNE )
-			{
-				if( commande < COMMANDE_MAX ) commande += COMMANDE_INC;
-			}
-			else
-			{
-				if( commande > COMMANDE_MIN ) commande -= COMMANDE_INC;
-			}*/
-			
-			///*************************************///	P			
-			commande += Kp * erreur;
-	
-			///*************************************///	PI
-			//commande +=  Kp * ( CONSIGNE - speed_real ) + ( Kp * Te / Ti * ( CONSIGNE - speed_real ) );
-			
-			///*************************************///	Ecretage
-			if( commande < COMMANDE_MIN ) commande = COMMANDE_MIN;
-			if( commande > COMMANDE_MAX ) commande = COMMANDE_MAX;
-			
-			pwmWrite (1, commande) ;
-			//pwmWrite (1, 40) ;
 		}
 		
 		if( a==1 ) 	b++;
@@ -173,7 +156,6 @@ void *thread_1(void *arg)
 	printf("En attente du démarrage du moteur ...\n");
 	
 	///********************************************************///	TEST DEAD LOCK
-	
 	do
 	{
 		if( b+c > MAX_COUNT )
@@ -183,6 +165,8 @@ void *thread_1(void *arg)
 			pthread_mutex_unlock(&mutex_speed_real);
 			
 			pwmWrite (1, UNBLOCKING) ;
+			
+			//update = 1;
 		}
 		
 	///********************************************************///	DISPLAY
@@ -192,7 +176,35 @@ void *thread_1(void *arg)
 			update = 0;
 			pthread_mutex_unlock(&mutex_update);
 			
+	///********************************************************///	REGULATION
+			erreur = CONSIGNE - speed_real;
+			///*************************************///	Fourchette
+			/*if( speed_real < CONSIGNE )
+			{
+				if( commande < COMMANDE_MAX ) commande += COMMANDE_INC;
+			}
+			else
+			{
+				if( commande > COMMANDE_MIN ) commande -= COMMANDE_INC;
+			}*/
+			
+			///*************************************///	P			
+			//commande += Kp * erreur;
+	
+			///*************************************///	PI
+			commande = commande_prev + b1*erreur + b0*erreur_prev;
+			
+			///*************************************///	Ecretage
+			if( commande < COMMANDE_MIN ) commande = COMMANDE_MIN;
+			if( commande > COMMANDE_MAX ) commande = COMMANDE_MAX;
+			
+			pwmWrite (1, commande) ;
+			//pwmWrite (1, 40) ;
+			
 			printf("Speed : %.1f\t\tCmd : %.1f\t\tRef : %.1f\n", speed_real, commande, CONSIGNE);
+			
+			commande_prev = commande;
+			erreur_prev = erreur;
 		}
 		
 		delay(PERIODE_ECH);
