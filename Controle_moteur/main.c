@@ -7,22 +7,32 @@
 ///	CYCLE TOTAL = 30 µs
 
 #define MEAN 5
-#define CONSIGNE 30.0
+#define CONSIGNE 40.0
 #define COMMANDE_MIN 0.0
 #define COMMANDE_MAX 200.0
 #define COMMANDE_INC 0.1
-#define MAX_COUNT 100000.0			// 1 tr/s
+#define MAX_COUNT 10000.0			// 1 tr/s
 #define LOOP_DURATION 10
 #define GAIN_TEMPO 1.0E6 / LOOP_DURATION
 #define PERIODE_ECH 100
 #define UNBLOCKING 100
 
 #define Te 0.1
-#define Kp 0.1					//#define GAIN 0.00002 0.4
+#define Kp 0.6					// Tosc = 500ms pour Kp = 1.2
 #define Ti 0.01
 
-#define b0 0.5					//	-Kp
-#define b1 1.0					//	(Kp + Kp*Te/Ti)
+#define Kosc 1.2
+#define Tosc 0.5
+
+#define KPIi 0.54*Kosc/Tosc
+//#define KPIp 0.45*Kosc - 0.5*KPIi*Te  //0.418704
+#define KPIp 0.45
+
+#define b0 -KPIp
+#define b1 KPIp+KPIi
+
+//#define b0 -0.5					//	-Kp
+//#define b1 1.0					//	(Kp + Kp*Te/Ti)
 
 // 	Correcteur: u(k) = u(k-1) + Kp*( Te/Ti + 1 )*e(k) - Kp*e(k-1) 
 //	J = 0,002.10-6 Kg.m2
@@ -31,10 +41,12 @@ pthread_mutex_t mutex_update = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_speed_real = PTHREAD_MUTEX_INITIALIZER;
 
 void *thread_1(void *arg);
+void *thread_2(void *arg);
 
 float speed_real, erreur, erreur_prev, commande, commande_prev;
 long int b, c;
 char update;
+FILE* fichier = NULL;
 
 int main (void)
 {
@@ -45,10 +57,9 @@ int main (void)
 	float temp;
 	
 	pthread_t thread1;
+	pthread_t thread2;
 	
-	/*FILE* fichier = NULL;
 	fichier = fopen("file.txt", "w+");
-	fprintf(fichier, "%f\n", speed_real);*/
 	
 	if (wiringPiSetup () == -1)
 	exit (1) ;
@@ -74,6 +85,11 @@ int main (void)
 	update = 0;
 	
 	if(pthread_create(&thread1, NULL, thread_1, NULL) == -1) {
+	perror("pthread_create");
+	return EXIT_FAILURE;
+    }
+	
+	if(pthread_create(&thread2, NULL, thread_2, NULL) == -1) {
 	perror("pthread_create");
 	return EXIT_FAILURE;
     }
@@ -164,7 +180,8 @@ void *thread_1(void *arg)
 			speed_real = 0;
 			pthread_mutex_unlock(&mutex_speed_real);
 			
-			pwmWrite (1, UNBLOCKING) ;
+			commande = UNBLOCKING;
+			pwmWrite (1, commande) ;
 			
 			//update = 1;
 		}
@@ -172,6 +189,8 @@ void *thread_1(void *arg)
 	///********************************************************///	DISPLAY
 		if( update == 1 )
 		{
+			//fprintf(fichier, "%f\n", speed_real);
+			
 			pthread_mutex_lock(&mutex_update);
 			update = 0;
 			pthread_mutex_unlock(&mutex_update);
@@ -210,6 +229,25 @@ void *thread_1(void *arg)
 		delay(PERIODE_ECH);
 	
 	}while(1);
+	
+    (void) arg;
+    pthread_exit(NULL);
+}
+
+void *thread_2(void *arg)
+{
+	//pwmWrite (1, 30) ;
+	
+	do
+	{
+		
+		//delay(10000);
+		//fclose(fichier);
+		//printf("ok!");
+	
+	}while(1);
+	
+	
 	
     (void) arg;
     pthread_exit(NULL);
