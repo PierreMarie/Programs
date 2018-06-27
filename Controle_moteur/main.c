@@ -18,18 +18,25 @@
 #define UNBLOCKING 100
 
 #define Te 0.1
-#define Kp 0.6					// Tosc = 500ms pour Kp = 1.2
-#define Ti 0.01
+//#define Kp 0.6					// Tosc = 500ms pour Kp = 1.2
+//#define Ti 0.01
+
+#define ADD 2.0
 
 #define Kosc 1.2
 #define Tosc 0.5
 
-#define KPIi 0.54*Kosc/Tosc
-//#define KPIp 0.45*Kosc - 0.5*KPIi*Te  //0.418704
-#define KPIp 0.45
+#define KPp 0.5*Kosc
 
-#define b0 -KPIp
-#define b1 KPIp+KPIi
+#define KPIi 0.54*Kosc/Tosc
+#define KPIp 0.45*Kosc - 0.5*KPIi*Te + ADD //0.418704
+
+#define KPIDi 1.2*Kosc/Tosc
+#define KPIDp 0.6*Kosc - 0.5*KPIDi*Te
+#define KPIDd 0.075*Kosc*Tosc
+
+//#define b0 -KPIp
+//#define b1 KPIp+KPIi
 
 //#define b0 -0.5					//	-Kp
 //#define b1 1.0					//	(Kp + Kp*Te/Ti)
@@ -37,13 +44,15 @@
 // 	Correcteur: u(k) = u(k-1) + Kp*( Te/Ti + 1 )*e(k) - Kp*e(k-1) 
 //	J = 0,002.10-6 Kg.m2
 
+//commande = commande_prev + b1*erreur + b0*erreur_prev;
+
 pthread_mutex_t mutex_update = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_speed_real = PTHREAD_MUTEX_INITIALIZER;
 
 void *thread_1(void *arg);
 void *thread_2(void *arg);
 
-float speed_real, erreur, erreur_prev, commande, commande_prev;
+float speed_real, erreur, erreur_prev, erreur_prev_prev, commande, commande_prev;
 long int b, c;
 char update;
 FILE* fichier = NULL;
@@ -170,6 +179,7 @@ int main (void)
 void *thread_1(void *arg)
 {
 	printf("En attente du démarrage du moteur ...\n");
+	printf("\nKp : %f\t\tKi : %f\n\n", KPIp, KPIi);
 	
 	///********************************************************///	TEST DEAD LOCK
 	do
@@ -198,20 +208,18 @@ void *thread_1(void *arg)
 	///********************************************************///	REGULATION
 			erreur = CONSIGNE - speed_real;
 			///*************************************///	Fourchette
-			/*if( speed_real < CONSIGNE )
-			{
-				if( commande < COMMANDE_MAX ) commande += COMMANDE_INC;
-			}
-			else
-			{
-				if( commande > COMMANDE_MIN ) commande -= COMMANDE_INC;
-			}*/
+			/*if( speed_real < CONSIGNE ) 	if( commande < COMMANDE_MAX ) commande += COMMANDE_INC;
+			else							if( commande > COMMANDE_MIN ) commande -= COMMANDE_INC; */
 			
 			///*************************************///	P			
 			//commande += Kp * erreur;
+			//commande = KPp * erreur;
 	
 			///*************************************///	PI
-			commande = commande_prev + b1*erreur + b0*erreur_prev;
+			commande = commande_prev + KPIp*(erreur-erreur_prev) + KPIi*Te*erreur;
+			
+			///*************************************///	PID
+			//commande = commande_prev + KPIDp*(erreur-erreur_prev) + KPIDi*Te*erreur + (KPIDd/Te)*(erreur - (2.0*erreur_prev) + erreur_prev_prev);
 			
 			///*************************************///	Ecretage
 			if( commande < COMMANDE_MIN ) commande = COMMANDE_MIN;
