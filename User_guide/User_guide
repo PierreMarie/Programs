@@ -31,6 +31,9 @@ git log
 git revert XXX
 git push
 
+Branche en retard ?
+git checkout HEAD sur dossier ou fichier concerné
+
 
 Alias : 
 
