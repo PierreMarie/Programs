@@ -14,7 +14,8 @@
 #define MAX_COUNT 10000.0			// 1 tr/s
 #define LOOP_DURATION 10
 #define GAIN_TEMPO 1.0E6 / LOOP_DURATION
-#define PERIODE_ECH 10
+#define GAIN_TEMPO_LOW 600.0
+#define PERIODE_ECH 100
 #define UNBLOCKING 100
 
 #define Te 0.01
@@ -54,7 +55,7 @@ void *thread_1(void *arg);
 void *thread_2(void *arg);
 void *thread_3(void *arg);
 
-float speed_real, erreur, erreur_prev, erreur_prev_prev, commande, commande_prev;
+float speed_real, speed_real_low, erreur, erreur_prev, erreur_prev_prev, commande, commande_prev;
 long int b, c;
 char update, work;
 FILE* fichier = NULL;
@@ -76,8 +77,11 @@ int main (void)
 	if (wiringPiSetup () == -1)
 	exit (1) ;
 	pinMode (24, INPUT) ;
+	
+	pinMode (23, INPUT) ;
+	//pullUpDnControl (23, PUD_UP);
+	
 	pinMode (1, PWM_OUTPUT) ;
-	//pullUpDnControl (25, PUD_UP);
 	
 	b = 0;		// 1
 	c = 0;		// 0
@@ -101,10 +105,10 @@ int main (void)
 	return EXIT_FAILURE;
     }
 	
-	if(pthread_create(&thread2, NULL, thread_2, NULL) == -1) {
+	/*if(pthread_create(&thread2, NULL, thread_2, NULL) == -1) {
 	perror("pthread_create");
 	return EXIT_FAILURE;
-    }
+    }*/
 	
 	if(pthread_create(&thread3, NULL, thread_3, NULL) == -1) {
 	perror("pthread_create");
@@ -176,6 +180,7 @@ int main (void)
 		
 		prev = a;
 		delayMicroseconds(LOOP_DURATION);
+		delay(1);
 		
 	}while(1);
 	
@@ -205,13 +210,13 @@ void *thread_1(void *arg)
 		}
 		
 	///********************************************************///	DISPLAY
-		if( update == 1 )
+		//if( update == 1 )
 		{
-			fprintf(fichier, "%f\n", speed_real);
+			//fprintf(fichier, "%f\n", speed_real);
 			
-			pthread_mutex_lock(&mutex_update);
-			update = 0;
-			pthread_mutex_unlock(&mutex_update);
+			//pthread_mutex_lock(&mutex_update);
+			//update = 0;
+			//pthread_mutex_unlock(&mutex_update);
 			
 	///********************************************************///	REGULATION
 			erreur = CONSIGNE - speed_real;
@@ -238,7 +243,7 @@ void *thread_1(void *arg)
 			
 			//pwmWrite (1, commande) ;
 			
-			printf("Speed : %.1f\t\tCmd : %.1f\t\tRef : %.1f\n", speed_real, commande, CONSIGNE);
+			printf("Speed : %.1f\t\tSpeed Low : %.1f\t\tCmd : %.1f\t\tRef : %.1f\n", speed_real, speed_real_low, commande, CONSIGNE);
 			
 			commande_prev = commande;
 			
@@ -261,8 +266,8 @@ void *thread_2(void *arg)
 	do
 	{
 		
-		delay(40000);
-		fclose(fichier);
+		//delay(40000);
+		//fclose(fichier);
 		//printf("ok!");
 	
 	}while(1);
@@ -275,16 +280,91 @@ void *thread_2(void *arg)
 
 void *thread_3(void *arg)
 {
-	//pwmWrite (1, 30) ;
+	char prev;
+	long int a, tab_mean[MEAN]={0}, tab_median[MEAN]={0}, tmp;
+	int i, j, middle;
+	long int sum;
+	float temp;
+	
+	b = 0;		// 1
+	c = 0;		// 0
+	prev = 1;
+	
+	speed_real_low = 0.0;
+	temp = 0.0;
+
+	//update = 0;
 	
 	do
 	{
-		//pwmWrite (1, 15) ;
-		work=0;
-		delay(2000);
-		//pwmWrite (1, 40) ;
-		work=1;
-		delay(10000);
+		a = digitalRead(23);
+		
+		if ( prev==0 && a==1 )
+		{		
+			///********************************************************///	MEAN
+			sum = 0;
+		
+			for( i=0; i<MEAN-1; i++ )
+			{
+				tab_mean[i] = tab_mean[i+1];
+				sum += tab_mean[i];	
+			}
+			
+			tab_mean[MEAN-1] = b+c;
+			
+			//sum += tab_mean[MEAN-1];
+			//temp=(float)sum/MEAN;
+			
+			///********************************************************///	MEDIAN
+			for( i=0; i<MEAN; i++ ) tab_median[i] = tab_mean[i];
+			
+			middle=MEAN/2;
+
+			for(i=0; i<MEAN; i++)
+			{
+				for(j=0; j<MEAN; j++)
+				{
+					if( j<(MEAN-1) )
+					{
+						if( tab_median[j]>tab_median[j+1] )
+						{
+							tmp=tab_median[j];
+							tab_median[j]=tab_median[j+1];
+							tab_median[j+1]=tmp;
+						}
+					}
+				}
+			}
+			
+			temp = (float)tab_median[middle];
+			
+			b = 0;
+			c = 0;
+		
+			///********************************************************///	UPDATE REAL SPEED
+			
+			//pthread_mutex_lock(&mutex_speed_real);
+			
+			if( temp == 0.0 ) speed_real_low = 0.0;
+			else speed_real_low = (float)100000.0/(600.0*temp);
+			
+			//pthread_mutex_lock(&mutex_update);
+			//update = 1;
+			//pthread_mutex_unlock(&mutex_update);
+		
+			//pthread_mutex_unlock(&mutex_speed_real);
+			
+			//pthread_mutex_lock(&mutex_update);
+			//update = 1;
+			//pthread_mutex_unlock(&mutex_update);
+		}
+		
+		if( a==1 ) 	b++;
+		else 		c++;	
+		
+		prev = a;
+		delayMicroseconds(10);
+		//delay(100);
 	
 	}while(1);
 	

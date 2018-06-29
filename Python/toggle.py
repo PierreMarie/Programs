@@ -23,6 +23,8 @@ GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 
 GPIO.setup(19, GPIO.OUT)
+GPIO.setup(13, GPIO.OUT)
+
 
 import os
 
@@ -140,9 +142,22 @@ if __name__ == "__main__":
 
 	    print('Periode : ' + str(duration))
 
-        GPIO.output(19, GPIO.HIGH)
-        time.sleep(0.0001)
-	GPIO.output(19, GPIO.LOW)
-	time.sleep(duration)
+	#duration2=duration/600.0
 
+        GPIO.output(19, GPIO.HIGH)
+	
+        time.sleep(0.001)
+
+	GPIO.output(19, GPIO.LOW)
+
+	time.sleep(0.001)
+
+	GPIO.output(13, GPIO.HIGH)
+
+	time.sleep(0.001)
+
+	GPIO.output(13, GPIO.LOW)
+	
+	time.sleep(duration)
+	
 	#kb.set_normal_term()
