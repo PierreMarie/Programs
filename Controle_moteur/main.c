@@ -7,9 +7,9 @@
 ///	CYCLE TOTAL = 30 µs
 
 #define MEAN 5
-#define CONSIGNE 30.0
+#define CONSIGNE 10.0
 #define COMMANDE_MIN 0.0
-#define COMMANDE_MAX 60.0
+#define COMMANDE_MAX 80.0
 #define COMMANDE_INC 0.1
 #define MAX_COUNT 50000.0			// 1 tr/s
 #define LOOP_DURATION 10
@@ -28,7 +28,6 @@
 #define Tosc 0.6
 
 #define KPp 0.5*Kosc
-//#define KPp 1.0*Kosc
 
 #define KPIi (0.54*Kosc/Tosc) 			// 1.3
 #define KPIp (0.45*Kosc - 0.5*KPIi*Te )	//0.47
@@ -62,6 +61,8 @@ FILE* fichier = NULL;
 
 int main (void)
 {
+	int i;
+	
 	pthread_t thread1;
 	pthread_t thread2;
 	//pthread_t thread3;
@@ -91,6 +92,14 @@ int main (void)
 	speed_real_low = 0.0;
 	
 	pwmWrite (1, commande);
+	/*pwmWrite (1, 50);
+	
+	for(i=30; i<80; i++)
+	{
+		pwmWrite (1, i);
+		printf("%d\n", i);
+		delay(1000);
+	}*/
 	
 	if(pthread_create(&thread1, NULL, thread_1, NULL) == -1) {
 	perror("pthread_create");
@@ -138,10 +147,10 @@ void *thread_1(void *arg)
 		
 		///*************************************///	P			
 		//commande += Kp * erreur;
-		//commande += KPp * erreur;
+		commande += KPp * erreur;
 
 		///*************************************///	PI
-		commande = commande_prev + KPIp*(erreur-erreur_prev) + KPIi*Te*erreur;
+		//commande = commande_prev + KPIp*(erreur-erreur_prev) + KPIi*Te*erreur;
 		
 		///*************************************///	PID
 		//commande = commande_prev + KPIDp*(erreur-erreur_prev) + KPIDi*Te*erreur + (KPIDd/Te)*(erreur - 2.0*erreur_prev + erreur_prev_prev);
