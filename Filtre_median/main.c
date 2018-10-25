@@ -138,21 +138,15 @@ void display_str(float* str)
 
 int main (void)
 {
-	float str[SIZE_STR]={0};
+	float str[10][2]={0.0}, tmp;
+	int i, j;
 	
 	srand(time(NULL));
 	
-	//generate_str(str, SIZE_STR, 1);
-	str[0]=2.0;
-	str[1]=1.40;
-	str[2]=1.2;
-	str[3]=0.0;
-	display_str(str);
-	calculate_median(str);
-	class(str);
-	display_str(str);
-	
-	//calculate_mean(str);
+	for(i=0; i<10; i++)
+	{
+		tmp = rand()%10;
+		printf("%f\n", tmp);
 
 	return 0 ;
 }
