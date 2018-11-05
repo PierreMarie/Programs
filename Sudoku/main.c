@@ -82,13 +82,14 @@ int main(void)
 										if( sum > 45 )	k=m+1;
 									}
 									
-									if( (sum != 45) || (product != 362880) )	test = 1;
+									if( (sum != 45) || (product != 362880) )
+									{
+										test = 1;
+										n = 9;
+										m = 9;
+									}
 								}
-								
-								if(test)	n=9; 
 							}
-							
-							if(test)	m=9; 
 						}
 					}
 					
@@ -96,11 +97,13 @@ int main(void)
 				
 				}while( test && iter <= NB_ITERATION_MAX );
 				
-				if (iter > NB_ITERATION_MAX)	j=9;
-				else							tab[j][i] = var;
+				if (iter > NB_ITERATION_MAX)
+				{
+					j = 9;
+					i = 9;
+				}
+				else	tab[j][i] = var;
 			}
-			
-			if (iter > NB_ITERATION_MAX)	i=9;
 		}
 	
 	}while(iter > NB_ITERATION_MAX);
