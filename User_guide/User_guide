@@ -8,6 +8,8 @@ git commit -m "first commit"
 git remote add origin https://github.com/PierreMarie/Programs.git
 git push -u origin master
 
+git clone https://github.com/PierreMarie/Programs.git
+
 
 …or push an existing repository from the command line
 git remote add origin https://github.com/PierreMarie/Programs.git

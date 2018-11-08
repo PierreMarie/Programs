@@ -2,12 +2,14 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define NB_ITERATION_MAX 60
+//#define NB_ITERATION_MAX 60		// Pour le hasard brut
+#define NB_ITERATION_MAX 40			// Pour le Back Tracking
 
 int main(void)
 {
 	int tab[9][9] = {0};
-	int i, j, k, l, m, n, var, test, iter, sum, product;
+	int i, j, k, l, m, n, var, var2, test, iter, sum, product;
+	long int tot=0;
 	
 	srand(time(NULL));
 	printf("\n");
@@ -21,6 +23,8 @@ int main(void)
 				tab[j][i] = 0;
 			}
 		}
+
+		var = 0;
 	
 		for( i=0; i<9; i++ )
 		{		
@@ -32,6 +36,7 @@ int main(void)
 				{	
 					test = 0;
 					var = (rand()%9) + 1;
+					//printf("\n%d\t%d\t%d",i, j, var);
 					
 					//******************************************************//	VERIF ROW
 					for( k=0; k<9; k++ )
@@ -93,20 +98,50 @@ int main(void)
 						}
 					}
 					
+					tab[j][i] = 0;
+					
 					iter ++;
 				
 				}while( test && iter <= NB_ITERATION_MAX );
 				
 				if (iter > NB_ITERATION_MAX)
 				{
-					j = 9;
-					i = 9;
+					var2 = (i*2)+5;
+	
+					if( (j-var2)>=0 )
+					{
+						j = j-var2;
+					}
+					else
+					{
+						if( i>0 )
+						{
+							i--;
+							j=8-abs(j-var2);
+							
+							if( j<0 ) j = 0;
+						}
+						else
+						{
+							j = 0;
+						}
+					}
+					
+					j = j-1;							// Pour compenser l'incrementation du for
 				}
-				else	tab[j][i] = var;
+				else
+				{
+					tab[j][i] = var;
+				}
+				
+				tot++;
 			}
 		}
 	
 	}while(iter > NB_ITERATION_MAX);
+	
+	printf("Nombre d'itérations : %ld ", tot);
+	printf("\n\n");
 	
 	for( i=0; i<9; i++ )
 	{		
