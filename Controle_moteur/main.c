@@ -36,7 +36,7 @@
 #define KPp 3.0
 
 #define KPIi 100.0
-#define KPIp 4.0
+#define KPIp 3.0
 
 #define KPIDi 1.2*Kosc/Tosc
 #define KPIDp 0.6*Kosc - 0.5*KPIDi*Te
@@ -60,7 +60,7 @@ void *thread_1(void *arg);
 void *thread_2(void *arg);
 void *thread_3(void *arg);
 
-float speed_real, speed_real_low, erreur, erreur_prev, erreur_prev_prev, commande, commande_prev, consigne;
+float speed_real, erreur, erreur_prev, erreur_prev_prev, commande, commande_prev, consigne;
 long int b, c;
 char update, work;
 FILE* fichier = NULL;
@@ -94,8 +94,7 @@ int main (void)
 	erreur_prev_prev = 0.0;
 	
 	speed_real = 0.0;
-	speed_real_low = 0.0;
-	
+		
 	pwmWrite (1, commande);
 	/*pwmWrite (1, 50);
 	
@@ -128,8 +127,6 @@ int main (void)
 
 void *thread_1(void *arg)
 {
-	int i;
-	
 	printf("En attente du démarrage du moteur ...\n");
 	printf("\nKp : %f\t\tKi : %f\t\tKd : %f\n\n", KPIDp, KPIDi, KPIDd);
 	
@@ -139,8 +136,7 @@ void *thread_1(void *arg)
 		if( b+c > MAX_COUNT )
 		{
 			pthread_mutex_lock(&mutex_speed_real);
-			speed_real = 0;
-			speed_real_low = 0;
+			speed_real = 0.0;
 			pthread_mutex_unlock(&mutex_speed_real);
 		}
 		
@@ -166,6 +162,8 @@ void *thread_1(void *arg)
 		///*************************************///	Ecretage
 		if( commande < COMMANDE_MIN ) commande = COMMANDE_MIN;
 		if( commande > COMMANDE_MAX ) commande = COMMANDE_MAX;
+		
+		if( consigne == 0 )	commande = 0.0;
 		
 		pwmWrite (1, commande) ;
 		//pwmWrite (1, consigne) ;
@@ -210,12 +208,12 @@ void *thread_2(void *arg)
 		if ( prev==0 && a==1 )
 		{		
 			///********************************************************///	MEAN
-			sum = 0;
+			//sum = 0;
 		
 			for( i=0; i<MEAN-1; i++ )
 			{
 				tab_mean[i] = tab_mean[i+1];
-				sum += tab_mean[i];	
+				//sum += tab_mean[i];	
 			}
 			
 			tab_mean[MEAN-1] = b+c;

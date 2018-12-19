@@ -19,6 +19,9 @@
 // void pinMode (int pin, int mode)		INPUT, OUTPUT, PWM_OUTPUT, GPIO_CLOCK, SOFT_PWM_OUTPUT, SOFT_TONE_OUTPUT, PWM_TONE_OUTPUT
 // void digitalWrite (int pin, int value)	LOW, HIGH
 
+#define MAX 760		// 4.40V
+#define MIN 375		// 2.69V
+#define DELAY 15
 
 int main (void)
 {
@@ -28,22 +31,24 @@ int main (void)
 	exit (1) ;
 
 	pinMode (1, PWM_OUTPUT) ;
-	pinMode (24, OUTPUT) ;
 	
-	digitalWrite (24, HIGH);
+	//pwmWrite (1, MIN) ;
+	//pinMode (24, OUTPUT) ;
+	
+	//digitalWrite (24, HIGH);
 
 	for (;;)
 	{
-	for (bright = 17 ; bright < 40 ; ++bright)
+	for (bright = MIN ; bright < MAX ; ++bright)
 	{
 		pwmWrite (1, bright) ;
-		delay (1000) ;
+		delay (DELAY) ;
 	}
 
-	for (bright = 40 ; bright >= 17 ; --bright)
+	for (bright = MAX ; bright >= MIN ; --bright)
 	{
 		pwmWrite (1, bright) ;
-		delay (1000) ;
+		delay (DELAY) ;
 	}
 
 	}
