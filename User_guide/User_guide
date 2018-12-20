@@ -8,6 +8,9 @@ git commit -m "first commit"
 git remote add origin https://github.com/PierreMarie/Programs.git
 git push -u origin master
 
+Pour ignorer les modifications locales
+git reset --hard
+
 git clone https://github.com/PierreMarie/Programs.git
 
 
