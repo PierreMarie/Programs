@@ -15,9 +15,7 @@
 #define MAX_COUNT 50000.0			// 1 tr/s
 #define LOOP_DURATION 10
 #define GAIN_TEMPO 1.0E5 / LOOP_DURATION
-#define GAIN_TEMPO_LOW 600.0
 #define PERIODE_ECH 10
-#define UNBLOCKING 100
 #define MAX_STR 10
 
 #define Te 0.01
@@ -59,7 +57,7 @@ int main (void)
 	exit (1) ;
 	pinMode (24, INPUT) ;
 	
-	pinMode (23, INPUT) ;
+	//pinMode (23, INPUT) ;
 	//pullUpDnControl (23, PUD_UP);
 	
 	pinMode (1, PWM_OUTPUT) ;
@@ -78,6 +76,7 @@ int main (void)
 	speed_real = 0.0;
 		
 	pwmWrite (1, commande);
+	
 	/*pwmWrite (1, 50);
 	
 	for(i=30; i<80; i++)
