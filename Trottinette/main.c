@@ -7,7 +7,7 @@
 ///	CYCLE TOTAL = 30 �s
 
 #define MEAN 5		//5
-#define CONSIGNE_INIT 15.0
+#define CONSIGNE_INIT 16.0
 #define COMMANDE_MIN 720			// 2.69V
 #define COMMANDE_MAX 980			// 4.40V
 		
@@ -32,10 +32,13 @@
 #define Kosc 1.2
 #define Tosc 0.6
 
-#define KPp 3.0
+#define KPp 500.0
 
-#define KPIi 100.0
-#define KPIp 3.0
+//#define KPIi 100.0
+//#de fine KPIp 3.0
+
+#define KPIi 10.0
+#define KPIp 10.0
 
 #define KPIDi 1.2*Kosc/Tosc
 #define KPIDp 0.6*Kosc - 0.5*KPIDi*Te
@@ -47,24 +50,27 @@ pthread_mutex_t mutex_speed_real = PTHREAD_MUTEX_INITIALIZER;
 void *thread_1(void *arg);
 void *thread_2(void *arg);
 void *thread_3(void *arg);
+void *thread_4(void *arg);
 
 float speed_real, erreur, erreur_prev, erreur_prev_prev, commande, commande_prev, consigne;
 long int b, c;
 char update, work;
 
-char state = 0;
+char state = 1, state_previous = 1;
 
 int main (void)
 {
 	pthread_t thread1;
 	pthread_t thread2;
 	pthread_t thread3;
+	pthread_t thread4;
 	
 	if (wiringPiSetup () == -1)
 	exit (1) ;
 	pinMode (24, INPUT) ;
 	
-	pinMode (3, INPUT) ;
+	//pinMode (3, INPUT) ;
+	pinMode (3, OUTPUT) ;
 	pullUpDnControl (3, PUD_DOWN);		// PUD_UP, PUD_DOWN, PUD_OFF
 	
 	//pinMode (23, INPUT) ;
@@ -111,6 +117,11 @@ int main (void)
 	return EXIT_FAILURE;
 	}
 	
+	if(pthread_create(&thread4, NULL, thread_4, NULL) == -1) {
+	perror("pthread_create");
+	return EXIT_FAILURE;
+	}
+	
 	while(1);
 
 	return 0;
@@ -118,8 +129,8 @@ int main (void)
 
 void *thread_1(void *arg)
 {
-	printf("En attente du démarrage du moteur ...\n");
-	printf("\nKp : %f\t\tKi : %f\t\tKd : %f\n\n", KPIDp, KPIDi, KPIDd);
+	//printf("En attente du démarrage du moteur ...\n");
+	//printf("\nKp : %f\t\tKi : %f\t\tKd : %f\n\n", KPIDp, KPIDi, KPIDd);
 	
 	///********************************************************///	TEST DEAD LOCK
 	do
@@ -134,15 +145,15 @@ void *thread_1(void *arg)
 		///********************************************************///	REGULATION
 		erreur = consigne - speed_real;
 		///*************************************///	Fourchette
-		if( speed_real < consigne ) 	{	if( commande < COMMANDE_MAX ) commande += COMMANDE_INC; }
-		else			 						{	if( commande > COMMANDE_MIN ) commande -= COMMANDE_INC; }
+		//if( speed_real < consigne ) 	{	if( commande < COMMANDE_MAX ) commande += COMMANDE_INC; }
+		//else			 				{	if( commande > COMMANDE_MIN ) commande -= COMMANDE_INC; }
 		
 		///*************************************///	P			
 		//commande += Kp * erreur;
 		//commande = KPp * erreur;
 
 		///*************************************///	PI
-		//commande = commande_prev + KPIp*(erreur-erreur_prev) + KPIi*Te*erreur;
+		commande = commande_prev + KPIp*(erreur-erreur_prev) + KPIi*Te*erreur;
 		
 		///*************************************///	PID
 		//commande = commande_prev + KPIDp*(erreur-erreur_prev) + KPIDi*Te*erreur + (KPIDd/Te)*(erreur - 2.0*erreur_prev + erreur_prev_prev);
@@ -157,18 +168,22 @@ void *thread_1(void *arg)
 		
 		if(state == 0)
 		{
-			//pinMode (1, PWM_OUTPUT) ;
-			//pwmWrite (1, (1024-commande)) ;
-			//pwmWrite (1, 350) ;
-			pwmWrite (1, 350) ;
+			if(state_previous == 1)
+			{
+				pwmWrite (1, (250)) ;
+				delay(200);
+			}
+			
+			pwmWrite (1, (1024-commande)) ;
+
 		}
 		else
 		{
-			pwmWrite (1, 250) ;
+			//pwmWrite (1, 250) ;
+			pwmWrite (1, 500) ;
 		}
 		
-		//printf("Speed : %.1f\t\tCmd : %.1f\t\tRef : %.1f\n", speed_real, commande, consigne);
-		printf("Speed : %.0f\t\tCmd : %.0f\t\tRef : %.1f\n", speed_real, commande, consigne);
+		//printf("Speed : %.0f\t\tCmd : %.0f\t\tRef : %.1f\n", speed_real, commande, consigne);
 
 		commande_prev = commande;
 		
@@ -262,6 +277,28 @@ void *thread_2(void *arg)
 }
 
 void *thread_3(void *arg)
+{	
+	do
+	{
+		if (digitalRead(3)==1)
+		{
+			delay(100);
+			while( digitalRead(3)==1 );
+			//if (digitalRead(3)==1)	state ^= 1;
+			state ^= 1;
+		}
+		
+		delay(10);
+		
+		state_previous = state;
+	
+	}while(1);
+	
+    (void) arg;
+    pthread_exit(NULL);
+}
+
+void *thread_4(void *arg)
 {
 	char chaine[MAX_STR];
 	
@@ -271,27 +308,6 @@ void *thread_3(void *arg)
 		//printf("Vitesse: %s", chaine);
 		
 		//consigne = atof(chaine);
-		
-		//a = digitalRead(0);
-		
-		//pinMode (1, INPUT);
-		
-		//pinMode (1, INPUT);
-		
-		if (digitalRead(3)==1)
-		{
-			delay(1000);
-			if (digitalRead(3)==1)
-			{
-			//if (state==1)
-			
-				//pwmWrite (1, (850)) ;
-				state ^= 1;
-			}
-				//pinMode (1, INPUT);
-			
-			//else if (state==0) state = 1;
-		}
 		
 		delay(100);
 	
