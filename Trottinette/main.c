@@ -7,16 +7,21 @@
 ///	CYCLE TOTAL = 30 µs
 
 #define MEAN 5		//5
-#define CONSIGNE_INIT 400.0
-#define COMMANDE_MIN 375			// 2.69V
-#define COMMANDE_MAX 500
-//#define COMMANDE_MAX 760			// 4.40V
-#define COMMANDE_INC 0.1
+#define CONSIGNE_INIT 15.0
+#define COMMANDE_MIN 720			// 2.69V
+#define COMMANDE_MAX 980			// 4.40V
+		
+#define COMMANDE_INC 1
 #define MAX_COUNT 50000.0			// 1 tr/s
-#define LOOP_DURATION 10
+#define LOOP_DURATION 100
 #define GAIN_TEMPO 1.0E5 / LOOP_DURATION
 #define PERIODE_ECH 10
 #define MAX_STR 10
+
+// Min		Max
+// 2.69V	4.4V
+// 720		980
+// 304		44
 
 #define Te 0.01
 //#define Kp 0.6					// Tosc = 500ms pour Kp = 1.2
@@ -47,6 +52,8 @@ float speed_real, erreur, erreur_prev, erreur_prev_prev, commande, commande_prev
 long int b, c;
 char update, work;
 
+char state = 0;
+
 int main (void)
 {
 	pthread_t thread1;
@@ -56,6 +63,9 @@ int main (void)
 	if (wiringPiSetup () == -1)
 	exit (1) ;
 	pinMode (24, INPUT) ;
+	
+	pinMode (3, INPUT) ;
+	pullUpDnControl (3, PUD_DOWN);		// PUD_UP, PUD_DOWN, PUD_OFF
 	
 	//pinMode (23, INPUT) ;
 	//pullUpDnControl (23, PUD_UP);
@@ -143,8 +153,19 @@ void *thread_1(void *arg)
 		
 		if( consigne == 0 )	commande = 0.0;
 		
-		pwmWrite (1, commande) ;
 		//pwmWrite (1, consigne) ;
+		
+		if(state == 0)
+		{
+			//pinMode (1, PWM_OUTPUT) ;
+			//pwmWrite (1, (1024-commande)) ;
+			//pwmWrite (1, 350) ;
+			pwmWrite (1, 350) ;
+		}
+		else
+		{
+			pwmWrite (1, 250) ;
+		}
 		
 		//printf("Speed : %.1f\t\tCmd : %.1f\t\tRef : %.1f\n", speed_real, commande, consigne);
 		printf("Speed : %.0f\t\tCmd : %.0f\t\tRef : %.1f\n", speed_real, commande, consigne);
@@ -246,10 +267,33 @@ void *thread_3(void *arg)
 	
 	do
 	{
-		fgets(chaine, MAX_STR, stdin);
-		printf("Vitesse: %s", chaine);
+		//fgets(chaine, MAX_STR, stdin);
+		//printf("Vitesse: %s", chaine);
 		
-		consigne = atof(chaine);
+		//consigne = atof(chaine);
+		
+		//a = digitalRead(0);
+		
+		//pinMode (1, INPUT);
+		
+		//pinMode (1, INPUT);
+		
+		if (digitalRead(3)==1)
+		{
+			delay(1000);
+			if (digitalRead(3)==1)
+			{
+			//if (state==1)
+			
+				//pwmWrite (1, (850)) ;
+				state ^= 1;
+			}
+				//pinMode (1, INPUT);
+			
+			//else if (state==0) state = 1;
+		}
+		
+		delay(100);
 	
 	}while(1);
 	
