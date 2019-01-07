@@ -7,7 +7,7 @@
 ///	CYCLE TOTAL = 30 µs
 
 #define MEAN 5		//5
-#define CONSIGNE_INIT 16.0
+#define CONSIGNE_INIT 15.0
 #define COMMANDE_MIN 720			// 2.69V
 #define COMMANDE_MAX 980			// 4.40V
 		
@@ -150,10 +150,10 @@ void *thread_1(void *arg)
 		
 		///*************************************///	P			
 		//commande += Kp * erreur;
-		//commande = KPp * erreur;
+		commande = KPp * erreur;
 
 		///*************************************///	PI
-		commande = commande_prev + KPIp*(erreur-erreur_prev) + KPIi*Te*erreur;
+		//commande = commande_prev + KPIp*(erreur-erreur_prev) + KPIi*Te*erreur;
 		
 		///*************************************///	PID
 		//commande = commande_prev + KPIDp*(erreur-erreur_prev) + KPIDi*Te*erreur + (KPIDd/Te)*(erreur - 2.0*erreur_prev + erreur_prev_prev);
@@ -171,7 +171,7 @@ void *thread_1(void *arg)
 			if(state_previous == 1)
 			{
 				pwmWrite (1, (250)) ;
-				delay(200);
+				delay(100);
 			}
 			
 			pwmWrite (1, (1024-commande)) ;
@@ -180,10 +180,14 @@ void *thread_1(void *arg)
 		else
 		{
 			//pwmWrite (1, 250) ;
-			pwmWrite (1, 500) ;
+			if(state_previous == 0)
+			{	
+				pwmWrite (1, 1000) ;
+				delay(3000);
+			}
 		}
 		
-		//printf("Speed : %.0f\t\tCmd : %.0f\t\tRef : %.1f\n", speed_real, commande, consigne);
+		printf("Speed : %.0f\t\tCmd : %.0f\t\tRef : %.1f\n", speed_real, commande, consigne);
 
 		commande_prev = commande;
 		
@@ -280,17 +284,26 @@ void *thread_3(void *arg)
 {	
 	do
 	{
+		state_previous = state;
+		
 		if (digitalRead(3)==1)
 		{
-			delay(100);
-			while( digitalRead(3)==1 );
-			//if (digitalRead(3)==1)	state ^= 1;
-			state ^= 1;
+			if( state == 0 )
+			{
+				state = 1;
+				delay(100);
+			}
+			else
+			{	//delay(300);
+				while( digitalRead(3)==1 );
+				//if (digitalRead(3)==1)	state ^= 1;
+				state ^= 1;
+			}
 		}
 		
 		delay(10);
 		
-		state_previous = state;
+		
 	
 	}while(1);
 	
@@ -300,7 +313,7 @@ void *thread_3(void *arg)
 
 void *thread_4(void *arg)
 {
-	char chaine[MAX_STR];
+	//char chaine[MAX_STR];
 	
 	do
 	{
