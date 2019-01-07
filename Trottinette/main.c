@@ -7,8 +7,8 @@
 ///	CYCLE TOTAL = 30 µs
 
 #define MEAN 5		//5
-#define CONSIGNE_INIT 15.0
-#define COMMANDE_MIN 720			// 2.69V
+#define CONSIGNE_INIT 20.0
+#define COMMANDE_MIN 720				// 2.69V
 #define COMMANDE_MAX 980			// 4.40V
 		
 #define COMMANDE_INC 1
@@ -20,8 +20,8 @@
 
 // Min		Max
 // 2.69V	4.4V
-// 720		980
-// 304		44
+// 		
+// 460		65
 
 #define Te 0.01
 //#define Kp 0.6					// Tosc = 500ms pour Kp = 1.2
@@ -32,7 +32,7 @@
 #define Kosc 1.2
 #define Tosc 0.6
 
-#define KPp 500.0
+#define KPp 50.0
 
 //#define KPIi 100.0
 //#de fine KPIp 3.0
@@ -72,6 +72,12 @@ int main (void)
 	//pinMode (3, INPUT) ;
 	pinMode (3, OUTPUT) ;
 	pullUpDnControl (3, PUD_DOWN);		// PUD_UP, PUD_DOWN, PUD_OFF
+	
+	pinMode (27, INPUT) ;
+	pullUpDnControl (27, PUD_UP);
+	
+	pinMode (26, INPUT) ;
+	pullUpDnControl (26, PUD_UP);
 	
 	//pinMode (23, INPUT) ;
 	//pullUpDnControl (23, PUD_UP);
@@ -171,7 +177,7 @@ void *thread_1(void *arg)
 			if(state_previous == 1)
 			{
 				pwmWrite (1, (250)) ;
-				delay(100);
+				delay(500);
 			}
 			
 			pwmWrite (1, (1024-commande)) ;
@@ -187,7 +193,7 @@ void *thread_1(void *arg)
 			}
 		}
 		
-		printf("Speed : %.0f\t\tCmd : %.0f\t\tRef : %.1f\n", speed_real, commande, consigne);
+		//printf("Speed : %.0f\t\tCmd : %.0f\t\tRef : %.1f\t%d\n", speed_real, commande, consigne, state);
 
 		commande_prev = commande;
 		
@@ -317,10 +323,26 @@ void *thread_4(void *arg)
 	
 	do
 	{
-		//fgets(chaine, MAX_STR, stdin);
-		//printf("Vitesse: %s", chaine);
+		/*fgets(chaine, MAX_STR, stdin);
+		printf("Vitesse: %s", chaine);
 		
-		//consigne = atof(chaine);
+		consigne = atof(chaine);*/
+		
+		if (digitalRead(27)==0)
+		{
+			while( digitalRead(27)==0 );
+			consigne += 1.0;
+		}
+		
+		if (digitalRead(26)==0)
+		{
+			while( digitalRead(26)==0 );
+			consigne -= 1.0;
+		}
+		
+		if (consigne < 1.0) consigne = 1.0;
+		
+		delay(10);
 		
 		delay(100);
 	
