@@ -4,45 +4,32 @@
 
 #include "wiringPi.h"
 
-///	CYCLE TOTAL = 30 µs
-
 #define MEAN 5		//5
-#define CONSIGNE_INIT 20.0
-#define COMMANDE_MIN 720				// 2.69V
+#define CONSIGNE_INIT 1.0
+#define COMMANDE_MIN 460				// 2.69V
 #define COMMANDE_MAX 980			// 4.40V
+#define LAUNCH 700
 		
 #define COMMANDE_INC 1
-#define MAX_COUNT 50000.0			// 1 tr/s
-#define LOOP_DURATION 100
-#define GAIN_TEMPO 1.0E5 / LOOP_DURATION
+#define MAX_COUNT 10.0			// 1 tr/s
+#define LOOP_DURATION 1.0
+#define GAIN_TEMPO LOOP_DURATION * 1000.0 / 15.0
 #define PERIODE_ECH 10
 #define MAX_STR 10
+#define Te 0.01
 
 // Min		Max
 // 2.69V	4.4V
 // 		
 // 460		65
 
-#define Te 0.01
-//#define Kp 0.6					// Tosc = 500ms pour Kp = 1.2
-//#define Ti 0.01
-
-#define ADD 2.0
-
-#define Kosc 1.2
-#define Tosc 0.6
-
-#define KPp 50.0
+#define KPp 10.0
 
 //#define KPIi 100.0
 //#de fine KPIp 3.0
 
-#define KPIi 10.0
-#define KPIp 10.0
-
-#define KPIDi 1.2*Kosc/Tosc
-#define KPIDp 0.6*Kosc - 0.5*KPIDi*Te
-#define KPIDd 3.0/40.0*Kosc*Tosc
+#define KPIi 0.5
+#define KPIp 5.0
 
 pthread_mutex_t mutex_update = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_speed_real = PTHREAD_MUTEX_INITIALIZER;
@@ -56,8 +43,8 @@ float speed_real, erreur, erreur_prev, erreur_prev_prev, commande, commande_prev
 long int b, c;
 char update, work;
 
-char state = 1, state_previous = 1;
-
+char state = 1, state_previous = 1;		//	OFF = 1
+										//	ON 	= 0;
 int main (void)
 {
 	pthread_t thread1;
@@ -67,29 +54,26 @@ int main (void)
 	
 	if (wiringPiSetup () == -1)
 	exit (1) ;
-	pinMode (24, INPUT) ;
+
+	pinMode (24, INPUT) ;				// Speed measurement
 	
-	//pinMode (3, INPUT) ;
-	pinMode (3, OUTPUT) ;
-	pullUpDnControl (3, PUD_DOWN);		// PUD_UP, PUD_DOWN, PUD_OFF
+	pinMode (3, OUTPUT) ;				// Start / Stop regulatore
+	pullUpDnControl (3, PUD_DOWN);
 	
-	pinMode (27, INPUT) ;
+	pinMode (27, INPUT) ;				// Increase speed
 	pullUpDnControl (27, PUD_UP);
 	
-	pinMode (26, INPUT) ;
+	pinMode (26, INPUT) ;				// Decrease speed
 	pullUpDnControl (26, PUD_UP);
 	
-	//pinMode (23, INPUT) ;
-	//pullUpDnControl (23, PUD_UP);
-	
-	pinMode (1, PWM_OUTPUT) ;
+	pinMode (1, PWM_OUTPUT) ;			// DC Brushless control
 	
 	b = 0;		// 1
 	c = 0;		// 0
 	
 	consigne = CONSIGNE_INIT; 
-	commande = CONSIGNE_INIT;
-	commande_prev = CONSIGNE_INIT;
+	commande = LAUNCH;
+	commande_prev = LAUNCH;
 	
 	erreur = 0.0;
 	erreur_prev = 0.0;
@@ -97,16 +81,7 @@ int main (void)
 	
 	speed_real = 0.0;
 		
-	pwmWrite (1, commande);
-	
-	/*pwmWrite (1, 50);
-	
-	for(i=30; i<80; i++)
-	{
-		pwmWrite (1, i);
-		printf("%d\n", i);
-		delay(1000);
-	}*/
+	//pwmWrite (1, commande);
 	
 	if(pthread_create(&thread1, NULL, thread_1, NULL) == -1) {
 	perror("pthread_create");
@@ -143,9 +118,9 @@ void *thread_1(void *arg)
 	{
 		if( b+c > MAX_COUNT )
 		{
-			pthread_mutex_lock(&mutex_speed_real);
+			//pthread_mutex_lock(&mutex_speed_real);
 			speed_real = 0.0;
-			pthread_mutex_unlock(&mutex_speed_real);
+			//pthread_mutex_unlock(&mutex_speed_real);
 		}
 
 		///********************************************************///	REGULATION
@@ -156,13 +131,15 @@ void *thread_1(void *arg)
 		
 		///*************************************///	P			
 		//commande += Kp * erreur;
-		commande = KPp * erreur;
+		//commande = KPp * erreur;
 
 		///*************************************///	PI
-		//commande = commande_prev + KPIp*(erreur-erreur_prev) + KPIi*Te*erreur;
+		commande = commande_prev + KPIp*(erreur-erreur_prev) + KPIi*Te*erreur;
 		
 		///*************************************///	PID
 		//commande = commande_prev + KPIDp*(erreur-erreur_prev) + KPIDi*Te*erreur + (KPIDd/Te)*(erreur - 2.0*erreur_prev + erreur_prev_prev);
+		
+		//printf("Speed : %.0f tr/s\t\tCmd : %.0f\t\tRef : %.1f\t%d\n", speed_real, commande, consigne, state);
 		
 		///*************************************///	Ecretage
 		if( commande < COMMANDE_MIN ) commande = COMMANDE_MIN;
@@ -171,13 +148,14 @@ void *thread_1(void *arg)
 		if( consigne == 0 )	commande = 0.0;
 		
 		//pwmWrite (1, consigne) ;
+		//pwmWrite (1, 350) ;
 		
 		if(state == 0)
 		{
 			if(state_previous == 1)
 			{
-				pwmWrite (1, (250)) ;
-				delay(500);
+				pwmWrite (1, (300)) ;
+				delay(200);
 			}
 			
 			pwmWrite (1, (1024-commande)) ;
@@ -185,15 +163,14 @@ void *thread_1(void *arg)
 		}
 		else
 		{
-			//pwmWrite (1, 250) ;
-			if(state_previous == 0)
-			{	
+			//if(state_previous == 0)
+			//{	
 				pwmWrite (1, 1000) ;
-				delay(3000);
-			}
+				//delay(3000);
+			//}
 		}
 		
-		//printf("Speed : %.0f\t\tCmd : %.0f\t\tRef : %.1f\t%d\n", speed_real, commande, consigne, state);
+		//printf("Speed : %.0f tr/s\t\tCmd : %.0f\t\tRef : %.1f\t%d\n\n\n", speed_real, commande, consigne, state);
 
 		commande_prev = commande;
 		
@@ -278,7 +255,7 @@ void *thread_2(void *arg)
 		else 		c++;	
 		
 		prev = a;
-		delayMicroseconds(LOOP_DURATION);
+		delay(LOOP_DURATION);
 	
 	}while(1);
 
@@ -287,29 +264,18 @@ void *thread_2(void *arg)
 }
 
 void *thread_3(void *arg)
-{	
+{
 	do
 	{
 		state_previous = state;
 		
-		if (digitalRead(3)==1)
+		if ( digitalRead(3)==1 )
 		{
-			if( state == 0 )
-			{
-				state = 1;
-				delay(100);
-			}
-			else
-			{	//delay(300);
-				while( digitalRead(3)==1 );
-				//if (digitalRead(3)==1)	state ^= 1;
-				state ^= 1;
-			}
+			state ^= 1;
+			delay(500);
 		}
 		
 		delay(10);
-		
-		
 	
 	}while(1);
 	
@@ -330,21 +296,19 @@ void *thread_4(void *arg)
 		
 		if (digitalRead(27)==0)
 		{
-			while( digitalRead(27)==0 );
 			consigne += 1.0;
 		}
-		
-		if (digitalRead(26)==0)
-		{
-			while( digitalRead(26)==0 );
-			consigne -= 1.0;
+		else
+		{		
+			if (digitalRead(26)==0)
+			{
+				consigne -= 1.0;
+			}
 		}
 		
 		if (consigne < 1.0) consigne = 1.0;
-		
-		delay(10);
-		
-		delay(100);
+
+		delay(500);
 	
 	}while(1);
 	
