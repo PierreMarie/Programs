@@ -5,13 +5,13 @@
 #include "wiringPi.h"
 
 #define MEAN 5		//5
-#define CONSIGNE_INIT 6.0
+#define CONSIGNE_INIT 4.0							//	8=18km/h	9=20km/h
 #define COMMANDE_MIN 460				// 2.69V
 #define COMMANDE_MAX 980			// 4.40V
-#define LAUNCH 700
+#define LAUNCH 700.0
 		
-#define COMMANDE_INC 1
-#define MAX_COUNT 10.0			// 1 tr/s
+#define COMMANDE_INC 1.0
+#define MAX_COUNT 1000.0/15.0			// 1 tr/s
 #define LOOP_DURATION 1.0
 #define GAIN_TEMPO LOOP_DURATION * 1000.0 / 15.0
 #define PERIODE_ECH 10
@@ -23,14 +23,10 @@
 // 		
 // 460		65
 
-#define KPp 100.0
-
-//#define KPIi 100.0
-//#de fine KPIp 3.0
-
-#define KPIi 10.0
-#define KPId 10.0
-#define KPIp 1.0
+#define Ki 2.0
+#define Kd 10.0
+#define Kp 2.0
+//#define Kp 5.0						// OK proportionnel simple + LAUNCH a 700
 
 pthread_mutex_t mutex_update = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_speed_real = PTHREAD_MUTEX_INITIALIZER;
@@ -111,7 +107,8 @@ int main (void)
 
 void *thread_1(void *arg)
 {
-	float I = LAUNCH , D; //P = 0.0, , D = 0.0;
+	//float I = LAUNCH ;//, D; //P = 0.0, , D = 0.0;
+	float I = LAUNCH;
 	
 	//printf("En attente du démarrage du moteur ...\n");
 	//printf("\nKp : %f\t\tKi : %f\t\tKd : %f\n\n", KPIDp, KPIDi, KPIDd);
@@ -129,9 +126,12 @@ void *thread_1(void *arg)
 		///********************************************************///	REGULATION
 		erreur = consigne - speed_real;
 		
-		D = (erreur - erreur_prev ) * KPId;
+		//D = (erreur - erreur_prev ) * KPId;
 		
-		if( commande < COMMANDE_MAX && state == 0)	I += KPIi * Te * erreur;
+		if( ( commande < COMMANDE_MAX && state == 0 ) || ( erreur < 0.0 && state == 0 ) )	I += Ki * Te * erreur;
+		
+		if ( consigne == COMMANDE_INC ) I = LAUNCH;
+
 		///*************************************///	Fourchette
 		//if( speed_real < consigne ) 	{	if( commande < COMMANDE_MAX ) commande += COMMANDE_INC; }
 		//else			 				{	if( commande > COMMANDE_MIN ) commande -= COMMANDE_INC; }
@@ -143,7 +143,8 @@ void *thread_1(void *arg)
 		///*************************************///	PI
 		//commande = commande_prev + KPIp*(erreur-erreur_prev) + KPIi*Te*erreur;
 		
-		commande = KPIp * ( erreur + I);
+		commande = Kp * erreur + I;
+		//commande = (Kp * erreur)+ LAUNCH;				// OK proportionnel simple + LAUNCH a 700
 		
 		///*************************************///	PID
 		//commande = commande_prev + KPIDp*(erreur-erreur_prev) + KPIDi*Te*erreur + (KPIDd/Te)*(erreur - 2.0*erreur_prev + erreur_prev_prev);
@@ -156,7 +157,7 @@ void *thread_1(void *arg)
 		
 		if( consigne == 0 )	commande = 0.0;
 		
-		//printf("Speed : %.0f tr/s\t\tCmd : %.0f\tErr : %.0f\t\tInt : %.0f\tRef : %.1f\t\t%d\n", speed_real, commande, erreur, I, consigne, state);
+		//printf("Speed : %.1f tr/s\t\tCmd : %.0f\tErr : %.0f\t\tInt : %.0f\tRef : %.1f\t\t%d\n", speed_real, commande, erreur, I, consigne, state);
 		
 		//pwmWrite (1, consigne) ;
 		//pwmWrite (1, 300) ;
@@ -307,17 +308,17 @@ void *thread_4(void *arg)
 		
 		if (digitalRead(27)==0)
 		{
-			consigne += 1.0;
+			consigne += COMMANDE_INC;
 		}
 		else
 		{		
 			if (digitalRead(26)==0)
 			{
-				consigne -= 1.0;
+				consigne -= COMMANDE_INC;
 			}
 		}
 		
-		if (consigne < 1.0) consigne = 1.0;
+		if (consigne < COMMANDE_INC) consigne = COMMANDE_INC;
 
 		delay(500);
 	
