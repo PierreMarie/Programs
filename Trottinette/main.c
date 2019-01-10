@@ -23,9 +23,9 @@
 // 		
 // 460		65
 
-#define Ki 2.0
+#define Ki 10.0
 #define Kd 10.0
-#define Kp 2.0
+#define Kp 5.0
 //#define Kp 5.0						// OK proportionnel simple + LAUNCH a 700
 
 pthread_mutex_t mutex_update = PTHREAD_MUTEX_INITIALIZER;
