@@ -5,12 +5,12 @@
 #include "wiringPi.h"
 
 #define MEAN 5		//5
-#define CONSIGNE_INIT 4.0							//	8=18km/h	9=20km/h
+#define CONSIGNE_INIT 2.0							//	8=18km/h	9=20km/h
 #define COMMANDE_MIN 460				// 2.69V
 #define COMMANDE_MAX 980			// 4.40V
 #define LAUNCH 700.0
 		
-#define COMMANDE_INC 1.0
+#define COMMANDE_INC 0.5
 #define MAX_COUNT 1000.0/15.0			// 1 tr/s
 #define LOOP_DURATION 1.0
 #define GAIN_TEMPO LOOP_DURATION * 1000.0 / 15.0
@@ -23,9 +23,10 @@
 // 		
 // 460		65
 
+#define Kp 50.0
 #define Ki 10.0
-#define Kd 10.0
-#define Kp 5.0
+#define Kd 50.0
+
 //#define Kp 5.0						// OK proportionnel simple + LAUNCH a 700
 
 pthread_mutex_t mutex_update = PTHREAD_MUTEX_INITIALIZER;
@@ -107,8 +108,7 @@ int main (void)
 
 void *thread_1(void *arg)
 {
-	//float I = LAUNCH ;//, D; //P = 0.0, , D = 0.0;
-	float I = LAUNCH;
+	float P = 0.0, I = LAUNCH, D = 0.0;
 	
 	//printf("En attente du démarrage du moteur ...\n");
 	//printf("\nKp : %f\t\tKi : %f\t\tKd : %f\n\n", KPIDp, KPIDi, KPIDd);
@@ -128,7 +128,7 @@ void *thread_1(void *arg)
 		
 		//D = (erreur - erreur_prev ) * KPId;
 		
-		if( ( commande < COMMANDE_MAX && state == 0 ) || ( erreur < 0.0 && state == 0 ) )	I += Ki * Te * erreur;
+		//if( ( commande < COMMANDE_MAX && state == 0 ) || ( erreur < 0.0 && state == 0 ) )	I += Ki * Te * erreur;
 		
 		if ( consigne == COMMANDE_INC ) I = LAUNCH;
 
@@ -143,7 +143,11 @@ void *thread_1(void *arg)
 		///*************************************///	PI
 		//commande = commande_prev + KPIp*(erreur-erreur_prev) + KPIi*Te*erreur;
 		
-		commande = Kp * erreur + I;
+		P = Kp * erreur;
+		
+		D = (Kd / Te) * (erreur - erreur_prev);
+		
+		commande = P + I + D;
 		//commande = (Kp * erreur)+ LAUNCH;				// OK proportionnel simple + LAUNCH a 700
 		
 		///*************************************///	PID
@@ -157,7 +161,7 @@ void *thread_1(void *arg)
 		
 		if( consigne == 0 )	commande = 0.0;
 		
-		//printf("Speed : %.1f tr/s\t\tCmd : %.0f\tErr : %.0f\t\tInt : %.0f\tRef : %.1f\t\t%d\n", speed_real, commande, erreur, I, consigne, state);
+		//printf("Speed : %.1f tr/s\tCmd : %.0f\t\tP : %.0f\t\tI : %.0f\t\tD : %.0f\tRef : %.1f\n", speed_real, commande, P, I, D, consigne);
 		
 		//pwmWrite (1, consigne) ;
 		//pwmWrite (1, 300) ;
@@ -175,11 +179,7 @@ void *thread_1(void *arg)
 		}
 		else
 		{
-			//if(state_previous == 0)
-			//{	
-				pwmWrite (1, 1000) ;
-				//delay(3000);
-			//}
+			pwmWrite (1, 1024-COMMANDE_MIN) ;
 		}
 		
 		//printf("Speed : %.0f tr/s\t\tCmd : %.0f\t\tRef : %.1f\t%d\n\n\n", speed_real, commande, consigne, state);
