@@ -4,10 +4,10 @@
 
 #include "wiringPi.h"
 
-#define MEAN 5		//5
-#define CONSIGNE_INIT 2.0							//	8=18km/h	9=20km/h
+#define MEAN 5
+#define CONSIGNE_INIT 10.0
 #define COMMANDE_MIN 460				// 2.69V
-#define COMMANDE_MAX 980			// 4.40V
+#define COMMANDE_MAX 980				// 4.40V
 #define LAUNCH 700.0
 		
 #define COMMANDE_INC 0.5
@@ -17,17 +17,15 @@
 #define PERIODE_ECH 10
 #define MAX_STR 10
 #define Te 0.01
+#define DERIV_MAX 7
 
 // Min		Max
 // 2.69V	4.4V
-// 		
 // 460		65
 
-#define Kp 50.0
-#define Ki 10.0
-#define Kd 50.0
-
-//#define Kp 5.0						// OK proportionnel simple + LAUNCH a 700
+#define Kp 20.0
+#define Ki 0.2
+#define Kd 10.0
 
 pthread_mutex_t mutex_update = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_speed_real = PTHREAD_MUTEX_INITIALIZER;
@@ -126,34 +124,29 @@ void *thread_1(void *arg)
 		///********************************************************///	REGULATION
 		erreur = consigne - speed_real;
 		
-		//D = (erreur - erreur_prev ) * KPId;
-		
-		//if( ( commande < COMMANDE_MAX && state == 0 ) || ( erreur < 0.0 && state == 0 ) )	I += Ki * Te * erreur;
-		
-		if ( consigne == COMMANDE_INC ) I = LAUNCH;
-
 		///*************************************///	Fourchette
 		//if( speed_real < consigne ) 	{	if( commande < COMMANDE_MAX ) commande += COMMANDE_INC; }
 		//else			 				{	if( commande > COMMANDE_MIN ) commande -= COMMANDE_INC; }
 		
-		///*************************************///	P			
-		//commande += Kp * erreur;
-		//commande = KPp * erreur;
-
-		///*************************************///	PI
-		//commande = commande_prev + KPIp*(erreur-erreur_prev) + KPIi*Te*erreur;
+		///*************************************///	PID
 		
 		P = Kp * erreur;
 		
-		D = (Kd / Te) * (erreur - erreur_prev);
+		if( ( commande < COMMANDE_MAX && state == 0 ) || ( erreur < 0.0 && state == 0 ) )
+		{
+			I += Ki * Te * erreur;
+		}
 		
+		if ( erreur - erreur_prev < DERIV_MAX )
+		{
+			D = (Kd / Te) * (erreur - erreur_prev);
+		}
+		else
+		{
+			D = 0.0;
+		}
+
 		commande = P + I + D;
-		//commande = (Kp * erreur)+ LAUNCH;				// OK proportionnel simple + LAUNCH a 700
-		
-		///*************************************///	PID
-		//commande = commande_prev + KPIDp*(erreur-erreur_prev) + KPIDi*Te*erreur + (KPIDd/Te)*(erreur - 2.0*erreur_prev + erreur_prev_prev);
-		
-		
 		
 		///*************************************///	Ecretage
 		if( commande < COMMANDE_MIN ) commande = COMMANDE_MIN;
@@ -182,8 +175,6 @@ void *thread_1(void *arg)
 			pwmWrite (1, 1024-COMMANDE_MIN) ;
 		}
 		
-		//printf("Speed : %.0f tr/s\t\tCmd : %.0f\t\tRef : %.1f\t%d\n\n\n", speed_real, commande, consigne, state);
-
 		commande_prev = commande;
 		
 		erreur_prev = erreur;
