@@ -5,27 +5,27 @@
 #include "wiringPi.h"
 
 #define MEAN 5
-#define CONSIGNE_INIT 10.0
+#define CONSIGNE_INIT 12.0		// 12.0
 #define COMMANDE_MIN 460				// 2.69V
 #define COMMANDE_MAX 980				// 4.40V
 #define LAUNCH 700.0
 		
-#define COMMANDE_INC 0.5
+#define COMMANDE_INC 2.0
 #define MAX_COUNT 1000.0/15.0			// 1 tr/s
 #define LOOP_DURATION 1.0
 #define GAIN_TEMPO LOOP_DURATION * 1000.0 / 15.0
 #define PERIODE_ECH 10
 #define MAX_STR 10
 #define Te 0.01
-#define DERIV_MAX 7
+#define DERIV_MAX 100
 
 // Min		Max
 // 2.69V	4.4V
 // 460		65
 
-#define Kp 20.0
-#define Ki 0.2
-#define Kd 10.0
+#define Kp 12.0
+#define Ki 0.1
+#define Kd 1.5
 
 pthread_mutex_t mutex_update = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_speed_real = PTHREAD_MUTEX_INITIALIZER;
@@ -288,15 +288,8 @@ void *thread_3(void *arg)
 
 void *thread_4(void *arg)
 {
-	//char chaine[MAX_STR];
-	
 	do
-	{
-		/*fgets(chaine, MAX_STR, stdin);
-		printf("Vitesse: %s", chaine);
-		
-		consigne = atof(chaine);*/
-		
+	{		
 		if (digitalRead(27)==0)
 		{
 			consigne += COMMANDE_INC;
