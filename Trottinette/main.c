@@ -5,7 +5,7 @@
 #include "wiringPi.h"
 
 #define MEAN 5
-#define CONSIGNE_INIT 12.0		// 12.0
+#define CONSIGNE_INIT 2.0		// 12.0
 #define COMMANDE_MIN 460				// 2.69V
 #define COMMANDE_MAX 980				// 4.40V
 #define LAUNCH 700.0
@@ -18,6 +18,7 @@
 #define MAX_STR 10
 #define Te 0.01
 #define DERIV_MAX 4
+#define DERIV_MAX2 50
 
 // Min		Max
 // 2.69V	4.4V
@@ -41,12 +42,16 @@ char update, work;
 
 char state = 1, state_previous = 1;		//	OFF = 1
 										//	ON 	= 0;
+//FILE* fichier = NULL;
+
 int main (void)
 {
 	pthread_t thread1;
 	pthread_t thread2;
 	pthread_t thread3;
 	pthread_t thread4;
+	
+	//fichier = fopen("file.txt", "w+");
 	
 	if (wiringPiSetup () == -1)
 	exit (1) ;
@@ -140,6 +145,11 @@ void *thread_1(void *arg)
 		if ( abs(erreur - erreur_prev) < DERIV_MAX )
 		{
 			D = (Kd / Te) * (erreur - erreur_prev);
+			
+			if ( abs(D) > DERIV_MAX2 )
+			{
+				D = 0.0;
+			}
 		}
 		else
 		{
@@ -153,6 +163,8 @@ void *thread_1(void *arg)
 		if( commande > COMMANDE_MAX ) commande = COMMANDE_MAX;
 		
 		if( consigne == 0 )	commande = 0.0;
+		
+		//fprintf(fichier, "%.1f;%.1f;%.1f;%.1f;%.1f;%.1f\n", speed_real, commande, consigne, P, I, D);
 		
 		//printf("Speed : %.1f tr/s\tCmd : %.0f\t\tP : %.0f\t\tI : %.0f\t\tD : %.0f\tRef : %.1f\n", speed_real, commande, P, I, D, consigne);
 		
