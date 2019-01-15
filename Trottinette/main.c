@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <stdlib.h>
+#include <stdlib.h> 
 #include <pthread.h>
 
 #include "wiringPi.h"
@@ -10,22 +10,22 @@
 #define COMMANDE_MAX 980				// 4.40V
 #define LAUNCH 700.0
 		
-#define COMMANDE_INC 2.0
+#define COMMANDE_INC 1.0
 #define MAX_COUNT 1000.0/15.0			// 1 tr/s
 #define LOOP_DURATION 1.0
 #define GAIN_TEMPO LOOP_DURATION * 1000.0 / 15.0
 #define PERIODE_ECH 10
 #define MAX_STR 10
 #define Te 0.01
-#define DERIV_MAX 100
+#define DERIV_MAX 4
 
 // Min		Max
 // 2.69V	4.4V
 // 460		65
 
-#define Kp 12.0
+#define Kp 13.0
 #define Ki 0.1
-#define Kd 1.5
+#define Kd 2.0
 
 pthread_mutex_t mutex_update = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_speed_real = PTHREAD_MUTEX_INITIALIZER;
@@ -137,7 +137,7 @@ void *thread_1(void *arg)
 			I += Ki * Te * erreur;
 		}
 		
-		if ( erreur - erreur_prev < DERIV_MAX )
+		if ( abs(erreur - erreur_prev) < DERIV_MAX )
 		{
 			D = (Kd / Te) * (erreur - erreur_prev);
 		}
