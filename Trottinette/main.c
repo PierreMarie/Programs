@@ -5,6 +5,7 @@
 #include "wiringPi.h"
 
 #define MEAN 5
+#define MEAN_COMMAND 3
 #define CONSIGNE_INIT 12.0		// 12.0
 #define COMMANDE_MIN 460				// 2.69V
 #define COMMANDE_MAX 980				// 4.40V
@@ -177,16 +178,16 @@ void *thread_1(void *arg)
 
 		sum = 0;
 		
-		for( i=0; i<MEAN-1; i++ )
+		for( i=0; i<MEAN_COMMAND-1; i++ )
 		{
 			tab_mean[i] = tab_mean[i+1];
 			sum += tab_mean[i];	
 		}
 			
-		tab_mean[MEAN-1] = commande;
-		sum += tab_mean[MEAN-1];
+		tab_mean[MEAN_COMMAND-1] = commande;
+		sum += tab_mean[MEAN_COMMAND-1];
 			
-		temp=(float)sum/MEAN;
+		temp=(float)sum/MEAN_COMMAND;
 		
 		if(state == 0)
 		{
