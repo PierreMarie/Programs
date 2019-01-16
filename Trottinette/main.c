@@ -18,8 +18,8 @@
 #define PERIODE_ECH 10
 #define MAX_STR 10
 #define Te 0.01
-#define DERIV_MAX 4
-#define DERIV_MAX2 50
+#define DERIV_MAX 1.0
+#define DERIV_MAX2 150
 
 // Min		Max
 // 2.69V	4.4V
@@ -43,7 +43,7 @@ char update, work;
 
 char state = 1, state_previous = 1;		//	OFF = 1
 										//	ON 	= 0;
-//FILE* fichier = NULL;
+FILE* fichier = NULL;
 
 int main (void)
 {
@@ -147,7 +147,7 @@ void *thread_1(void *arg)
 			I += Ki * Te * erreur;
 		}
 		
-		if ( abs(erreur - erreur_prev) < DERIV_MAX )
+		if ( abs(erreur - erreur_prev) <= DERIV_MAX )
 		{
 			D = (Kd / Te) * (erreur - erreur_prev);
 			
@@ -168,8 +168,6 @@ void *thread_1(void *arg)
 		if( commande > COMMANDE_MAX ) commande = COMMANDE_MAX;
 		
 		if( consigne == 0 )	commande = 0.0;
-		
-		//fprintf(fichier, "%.1f;%.1f;%.1f;%.1f;%.1f;%.1f\n", speed_real, commande, consigne, P, I, D);
 		
 		//printf("Speed : %.1f tr/s\tCmd : %.0f\t\tP : %.0f\t\tI : %.0f\t\tD : %.0f\tRef : %.1f\n", speed_real, commande, P, I, D, consigne);
 		
@@ -206,6 +204,8 @@ void *thread_1(void *arg)
 			pwmWrite (1, 1024-COMMANDE_MIN) ;
 		}
 		
+		//fprintf(fichier, "%.1f;%.1f;%.1f;%.1f;%.1f;%.1f\n", speed_real, temp, consigne, P, I, D);
+		
 		commande_prev = commande;
 		
 		erreur_prev = erreur;
@@ -224,7 +224,7 @@ void *thread_2(void *arg)
 	char prev;
 	long int a, tab_mean[MEAN]={0}, tab_median[MEAN]={0}, tmp;
 	int i, j, middle;
-	//long int sum;
+	long int sum;
 	float temp;
 	
 	b = 0;		// 1
@@ -241,18 +241,18 @@ void *thread_2(void *arg)
 		if ( prev==0 && a==1 )
 		{		
 			///********************************************************///	MEAN
-			//sum = 0;
+			sum = 0;
 		
 			for( i=0; i<MEAN-1; i++ )
 			{
 				tab_mean[i] = tab_mean[i+1];
-				//sum += tab_mean[i];	
+				sum += tab_mean[i];	
 			}
 			
 			tab_mean[MEAN-1] = b+c;
 			
-			//sum += tab_mean[MEAN-1];
-			//temp=(float)sum/MEAN;
+			sum += tab_mean[MEAN-1];
+			temp=(float)sum/MEAN;
 			
 			///********************************************************///	MEDIAN
 			for( i=0; i<MEAN; i++ ) tab_median[i] = tab_mean[i];
@@ -275,7 +275,7 @@ void *thread_2(void *arg)
 				}
 			}
 			
-			temp = (float)tab_median[middle];
+			//temp = (float)tab_median[middle];
 			
 			b = 0;
 			c = 0;
