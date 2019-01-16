@@ -5,7 +5,7 @@
 #include "wiringPi.h"
 
 #define MEAN 5
-#define CONSIGNE_INIT 2.0		// 12.0
+#define CONSIGNE_INIT 12.0		// 12.0
 #define COMMANDE_MIN 460				// 2.69V
 #define COMMANDE_MAX 980				// 4.40V
 #define LAUNCH 700.0
@@ -112,6 +112,10 @@ int main (void)
 void *thread_1(void *arg)
 {
 	float P = 0.0, I = LAUNCH, D = 0.0;
+
+	float tab_mean[MEAN] = {0.0}, temp, sum;
+
+	int i;
 	
 	//printf("En attente du démarrage du moteur ...\n");
 	//printf("\nKp : %f\t\tKi : %f\t\tKd : %f\n\n", KPIDp, KPIDi, KPIDd);
@@ -170,6 +174,19 @@ void *thread_1(void *arg)
 		
 		//pwmWrite (1, consigne) ;
 		//pwmWrite (1, 300) ;
+
+		sum = 0;
+		
+		for( i=0; i<MEAN-1; i++ )
+		{
+			tab_mean[i] = tab_mean[i+1];
+			sum += tab_mean[i];	
+		}
+			
+		tab_mean[MEAN-1] = commande;
+		sum += tab_mean[MEAN-1];
+			
+		temp=(float)sum/MEAN;
 		
 		if(state == 0)
 		{
@@ -179,7 +196,8 @@ void *thread_1(void *arg)
 				delay(200);
 			}
 			
-			pwmWrite (1, (1024-commande)) ;
+			//pwmWrite (1, (1024-commande)) ;
+			pwmWrite (1, (1024-temp)) ;
 
 		}
 		else
