@@ -5,7 +5,7 @@
 #include "wiringPi.h"
 
 #define MEAN 5
-#define MEAN_COMMAND 3
+#define MEAN_COMMAND 5
 #define CONSIGNE_INIT 12.0		// 12.0
 #define COMMANDE_MIN 460				// 2.69V
 #define COMMANDE_MAX 980				// 4.40V
@@ -25,7 +25,7 @@
 // 2.69V	4.4V
 // 460		65
 
-#define Kp 13.0
+#define Kp 12.0
 #define Ki 0.1
 #define Kd 2.0
 
