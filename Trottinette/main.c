@@ -228,7 +228,7 @@ void *thread_2(void *arg)
 {
 	char prev;
 	long int a, tab_mean[MEAN]={0}, tab_median[MEAN]={0}, tmp;
-	int i, j, middle;
+	int i, j;//, middle;
 	long int sum;
 	float temp;
 	
@@ -262,7 +262,7 @@ void *thread_2(void *arg)
 			///********************************************************///	MEDIAN
 			for( i=0; i<MEAN; i++ ) tab_median[i] = tab_mean[i];
 			
-			middle=MEAN/2;
+			//middle=MEAN/2;
 
 			for(i=0; i<MEAN; i++)
 			{
@@ -328,7 +328,7 @@ void *thread_4(void *arg)
 	{		
 		if (digitalRead(27)==0)
 		{
-			consigne += COMMANDE_INC;
+			consigne += 2.0*COMMANDE_INC;
 		}
 		else
 		{		
