@@ -146,6 +146,11 @@ void *thread_1(void *arg)
 		{
 			I += Ki * Te * erreur;
 		}
+
+		if( (speed_real > consigne) && (I<LAUNCH) )
+		{
+			I = LAUNCH;
+		}
 		
 		if ( abs(erreur - erreur_prev) <= DERIV_MAX )
 		{
