@@ -25,9 +25,9 @@
 // 2.69V	4.4V
 // 460		65
 
-#define Kp 12.0
-#define Ki 0.1
-#define Kd 2.0
+#define Kp 12.0		// 12.0
+#define Ki 0.1		// 0.1
+#define Kd 4.2		// 4.3
 
 pthread_mutex_t mutex_update = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_speed_real = PTHREAD_MUTEX_INITIALIZER;
@@ -43,7 +43,7 @@ char update, work;
 
 char state = 1, state_previous = 1;		//	OFF = 1
 										//	ON 	= 0;
-FILE* fichier = NULL;
+//FILE* fichier = NULL;
 
 int main (void)
 {
@@ -202,15 +202,15 @@ void *thread_1(void *arg)
 			
 			//pwmWrite (1, (1024-commande)) ;
 			pwmWrite (1, (1024-temp)) ;
+			
+			//fprintf(fichier, "%.1f;%.1f;%.1f;%.1f;%.1f;%.1f\n", speed_real, temp, consigne, P, I, D);
 
 		}
 		else
 		{
 			pwmWrite (1, 1024-COMMANDE_MIN) ;
 		}
-		
-		//fprintf(fichier, "%.1f;%.1f;%.1f;%.1f;%.1f;%.1f\n", speed_real, temp, consigne, P, I, D);
-		
+
 		commande_prev = commande;
 		
 		erreur_prev = erreur;
