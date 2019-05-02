@@ -27,7 +27,7 @@
 
 #define Kp 12.0		// 12.0
 #define Ki 0.1		// 0.1
-#define Kd 4.2		// 4.3
+#define Kd 4.3		// 4.3
 
 pthread_mutex_t mutex_update = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_speed_real = PTHREAD_MUTEX_INITIALIZER;
@@ -69,6 +69,8 @@ int main (void)
 	pullUpDnControl (26, PUD_UP);
 	
 	pinMode (1, PWM_OUTPUT) ;			// DC Brushless control
+	pwmSetClock(1);
+	pwmSetRange(80);
 	
 	b = 0;		// 1
 	c = 0;		// 0
@@ -174,11 +176,12 @@ void *thread_1(void *arg)
 		
 		if( consigne == 0 )	commande = 0.0;
 		
-		//printf("Speed : %.1f tr/s\tCmd : %.0f\t\tP : %.0f\t\tI : %.0f\t\tD : %.0f\tRef : %.1f\n", speed_real, commande, P, I, D, consigne);
+		//printf("Speed : %.1f tr/s\tCmd : %.0f\t\tP : %.0f\t\tI : %.0f\t\tD : %.0f\tRef : %.1f\t%d\n", speed_real, commande, P, I, D, consigne, state);
 		
 		//pwmWrite (1, consigne) ;
-		//pwmWrite (1, 300) ;
-
+		//pwmWrite (1, 550) ;
+		pwmWrite (1, 0) ;
+		
 		sum = 0;
 		
 		for( i=0; i<MEAN_COMMAND-1; i++ )
@@ -192,7 +195,7 @@ void *thread_1(void *arg)
 			
 		temp=(float)sum/MEAN_COMMAND;
 		
-		if(state == 0)
+		/* if(state == 0)
 		{
 			if(state_previous == 1)
 			{
@@ -209,7 +212,7 @@ void *thread_1(void *arg)
 		else
 		{
 			pwmWrite (1, 1024-COMMANDE_MIN) ;
-		}
+		} */
 
 		commande_prev = commande;
 		
