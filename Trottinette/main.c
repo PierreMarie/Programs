@@ -5,13 +5,13 @@
 #include "wiringPi.h"
 
 #define MEAN 5
-#define MEAN_COMMAND 5
-#define CONSIGNE_INIT 12.0		// 12.0
-#define COMMANDE_MIN 460				// 2.69V
-#define COMMANDE_MAX 980				// 4.40V
-#define LAUNCH 700.0
+#define MEAN_COMMAND 20
+#define CONSIGNE_INIT 20.0				// 12.0
+#define COMMANDE_MIN 400				// 2.69V
+#define COMMANDE_MAX 1000				// 4.40V
+#define LAUNCH 500.0
 		
-#define COMMANDE_INC 1.0
+#define COMMANDE_INC 2.0
 #define MAX_COUNT 1000.0/15.0			// 1 tr/s
 #define LOOP_DURATION 1.0
 #define GAIN_TEMPO LOOP_DURATION * 1000.0 / 15.0
@@ -19,15 +19,15 @@
 #define MAX_STR 10
 #define Te 0.01
 #define DERIV_MAX 1.0
-#define DERIV_MAX2 150
+#define DERIV_MAX2 10
 
 // Min		Max
 // 2.69V	4.4V
 // 460		65
 
 #define Kp 12.0		// 12.0
-#define Ki 0.1		// 0.1
-#define Kd 4.3		// 4.3
+#define Ki 1.0		// 0.1
+#define Kd 4.0		// 4.3
 
 pthread_mutex_t mutex_update = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_speed_real = PTHREAD_MUTEX_INITIALIZER;
@@ -43,7 +43,7 @@ char update, work;
 
 char state = 1, state_previous = 1;		//	OFF = 1
 										//	ON 	= 0;
-//FILE* fichier = NULL;
+FILE* fichier = NULL;
 
 int main (void)
 {
@@ -52,7 +52,7 @@ int main (void)
 	pthread_t thread3;
 	pthread_t thread4;
 	
-	//fichier = fopen("file.txt", "w+");
+	fichier = fopen("file.txt", "w+");
 	
 	if (wiringPiSetup () == -1)
 	exit (1) ;
@@ -69,8 +69,7 @@ int main (void)
 	pullUpDnControl (26, PUD_UP);
 	
 	pinMode (1, PWM_OUTPUT) ;			// DC Brushless control
-	pwmSetClock(1);
-	pwmSetRange(80);
+	//pwmSetClock(10);
 	
 	b = 0;		// 1
 	c = 0;		// 0
@@ -116,10 +115,10 @@ void *thread_1(void *arg)
 {
 	float P = 0.0, I = LAUNCH, D = 0.0;
 
-	float tab_mean[MEAN] = {0.0}, temp, sum;
+	float tab_mean[MEAN_COMMAND] = {0.0}, temp, sum;
 
 	int i;
-	
+		
 	//printf("En attente du démarrage du moteur ...\n");
 	//printf("\nKp : %f\t\tKi : %f\t\tKd : %f\n\n", KPIDp, KPIDi, KPIDd);
 	
@@ -168,7 +167,8 @@ void *thread_1(void *arg)
 			D = 0.0;
 		}
 
-		commande = P + I + D;
+		//commande = P + I + D;
+		commande = P + I;
 		
 		///*************************************///	Ecretage
 		if( commande < COMMANDE_MIN ) commande = COMMANDE_MIN;
@@ -177,11 +177,7 @@ void *thread_1(void *arg)
 		if( consigne == 0 )	commande = 0.0;
 		
 		//printf("Speed : %.1f tr/s\tCmd : %.0f\t\tP : %.0f\t\tI : %.0f\t\tD : %.0f\tRef : %.1f\t%d\n", speed_real, commande, P, I, D, consigne, state);
-		
-		//pwmWrite (1, consigne) ;
-		//pwmWrite (1, 550) ;
-		pwmWrite (1, 0) ;
-		
+
 		sum = 0;
 		
 		for( i=0; i<MEAN_COMMAND-1; i++ )
@@ -194,8 +190,8 @@ void *thread_1(void *arg)
 		sum += tab_mean[MEAN_COMMAND-1];
 			
 		temp=(float)sum/MEAN_COMMAND;
-		
-		/* if(state == 0)
+				
+		if(state == 0)
 		{
 			if(state_previous == 1)
 			{
@@ -203,16 +199,16 @@ void *thread_1(void *arg)
 				delay(200);
 			}
 			
-			//pwmWrite (1, (1024-commande)) ;
-			pwmWrite (1, (1024-temp)) ;
+			pwmWrite (1, ((int)temp)) ;
+			//pwmWrite (1, (1024-temp)) ;
 			
 			//fprintf(fichier, "%.1f;%.1f;%.1f;%.1f;%.1f;%.1f\n", speed_real, temp, consigne, P, I, D);
 
 		}
 		else
 		{
-			pwmWrite (1, 1024-COMMANDE_MIN) ;
-		} */
+			pwmWrite (1, COMMANDE_MIN) ;
+		}
 
 		commande_prev = commande;
 		
@@ -331,13 +327,13 @@ void *thread_4(void *arg)
 	{		
 		if (digitalRead(27)==0)
 		{
-			consigne += 2.0*COMMANDE_INC;
+			consigne += 1.0*COMMANDE_INC;
 		}
 		else
 		{		
 			if (digitalRead(26)==0)
 			{
-				consigne -= COMMANDE_INC;
+				consigne -= 1.0*COMMANDE_INC;
 			}
 		}
 		
