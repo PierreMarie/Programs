@@ -5,29 +5,28 @@
 #include "wiringPi.h"
 
 #define MEAN 5
-#define MEAN_COMMAND 20
-#define CONSIGNE_INIT 20.0				// 12.0
+#define MEAN_COMMAND 3
+#define CONSIGNE_INIT 5.0				// 12.0
 #define COMMANDE_MIN 400				// 2.69V
-#define COMMANDE_MAX 1000				// 4.40V
-#define LAUNCH 500.0
+#define COMMANDE_MAX 1023				// 4.40V
+#define LAUNCH 700.0
 		
-#define COMMANDE_INC 2.0
+#define COMMANDE_INC 1.0
 #define MAX_COUNT 1000.0/15.0			// 1 tr/s
 #define LOOP_DURATION 1.0
 #define GAIN_TEMPO LOOP_DURATION * 1000.0 / 15.0
 #define PERIODE_ECH 10
 #define MAX_STR 10
 #define Te 0.01
-#define DERIV_MAX 1.0
-#define DERIV_MAX2 10
+#define DERIV_MAX 200.0
 
 // Min		Max
 // 2.69V	4.4V
 // 460		65
 
-#define Kp 12.0		// 12.0
-#define Ki 1.0		// 0.1
-#define Kd 4.0		// 4.3
+#define Kp 100.0		// 12.0
+#define Ki 0.1		// 0.1
+#define Kd 5.0		// 4.3
 
 pthread_mutex_t mutex_update = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_speed_real = PTHREAD_MUTEX_INITIALIZER;
@@ -36,6 +35,7 @@ void *thread_1(void *arg);
 void *thread_2(void *arg);
 void *thread_3(void *arg);
 void *thread_4(void *arg);
+void *thread_5(void *arg);
 
 float speed_real, erreur, erreur_prev, erreur_prev_prev, commande, commande_prev, consigne;
 long int b, c;
@@ -51,6 +51,7 @@ int main (void)
 	pthread_t thread2;
 	pthread_t thread3;
 	pthread_t thread4;
+	pthread_t thread5;
 	
 	fichier = fopen("file.txt", "w+");
 	
@@ -69,23 +70,20 @@ int main (void)
 	pullUpDnControl (26, PUD_UP);
 	
 	pinMode (1, PWM_OUTPUT) ;			// DC Brushless control
-	//pwmSetClock(10);
 	
 	b = 0;		// 1
 	c = 0;		// 0
 	
 	consigne = CONSIGNE_INIT; 
-	commande = LAUNCH;
-	commande_prev = LAUNCH;
+	commande = COMMANDE_MAX;
+	commande_prev = COMMANDE_MAX;
 	
 	erreur = 0.0;
 	erreur_prev = 0.0;
 	erreur_prev_prev = 0.0;
 	
 	speed_real = 0.0;
-		
-	//pwmWrite (1, commande);
-	
+			
 	if(pthread_create(&thread1, NULL, thread_1, NULL) == -1) {
 	perror("pthread_create");
 	return EXIT_FAILURE;
@@ -102,6 +100,11 @@ int main (void)
 	}
 	
 	if(pthread_create(&thread4, NULL, thread_4, NULL) == -1) {
+	perror("pthread_create");
+	return EXIT_FAILURE;
+	}
+	
+	if(pthread_create(&thread5, NULL, thread_5, NULL) == -1) {
 	perror("pthread_create");
 	return EXIT_FAILURE;
 	}
@@ -142,38 +145,22 @@ void *thread_1(void *arg)
 		///*************************************///	PID
 		
 		P = Kp * erreur;
-		
+				
 		if( ( commande < COMMANDE_MAX && state == 0 ) || ( erreur < 0.0 && state == 0 ) )
 		{
 			I += Ki * Te * erreur;
 		}
 
-		if( (speed_real > consigne) && (I<LAUNCH) )
-		{
-			I = LAUNCH;
-		}
+		D = (Kd / Te) * (erreur - erreur_prev);
 		
-		if ( abs(erreur - erreur_prev) <= DERIV_MAX )
-		{
-			D = (Kd / Te) * (erreur - erreur_prev);
-			
-			if ( abs(D) > DERIV_MAX2 )
-			{
-				D = 0.0;
-			}
-		}
-		else
-		{
-			D = 0.0;
-		}
+		if ( abs(D) > DERIV_MAX )	D = 0.0;
 
-		//commande = P + I + D;
-		commande = P + I;
-		
+		commande = P + I + D;
+
 		///*************************************///	Ecretage
 		if( commande < COMMANDE_MIN ) commande = COMMANDE_MIN;
 		if( commande > COMMANDE_MAX ) commande = COMMANDE_MAX;
-		
+					
 		if( consigne == 0 )	commande = 0.0;
 		
 		//printf("Speed : %.1f tr/s\tCmd : %.0f\t\tP : %.0f\t\tI : %.0f\t\tD : %.0f\tRef : %.1f\t%d\n", speed_real, commande, P, I, D, consigne, state);
@@ -193,21 +180,14 @@ void *thread_1(void *arg)
 				
 		if(state == 0)
 		{
-			if(state_previous == 1)
-			{
-				pwmWrite (1, (300)) ;
-				delay(200);
-			}
-			
-			pwmWrite (1, ((int)temp)) ;
-			//pwmWrite (1, (1024-temp)) ;
+			//pwmWrite (1, (int)commande);
+			pwmWrite (1, (int)temp);
 			
 			//fprintf(fichier, "%.1f;%.1f;%.1f;%.1f;%.1f;%.1f\n", speed_real, temp, consigne, P, I, D);
-
 		}
 		else
 		{
-			pwmWrite (1, COMMANDE_MIN) ;
+			pwmWrite (1, (int)COMMANDE_MIN) ;
 		}
 
 		commande_prev = commande;
@@ -226,8 +206,8 @@ void *thread_1(void *arg)
 void *thread_2(void *arg)
 {
 	char prev;
-	long int a, tab_mean[MEAN]={0}, tab_median[MEAN]={0}, tmp;
-	int i, j;//, middle;
+	long int a, tab_mean[MEAN]={0};//, tab_median[MEAN]={0}, tmp;
+	int i;//, j, middle;
 	long int sum;
 	float temp;
 	
@@ -259,9 +239,9 @@ void *thread_2(void *arg)
 			temp=(float)sum/MEAN;
 			
 			///********************************************************///	MEDIAN
-			for( i=0; i<MEAN; i++ ) tab_median[i] = tab_mean[i];
+			/*for( i=0; i<MEAN; i++ ) tab_median[i] = tab_mean[i];
 			
-			//middle=MEAN/2;
+			middle=MEAN/2;
 
 			for(i=0; i<MEAN; i++)
 			{
@@ -279,7 +259,7 @@ void *thread_2(void *arg)
 				}
 			}
 			
-			//temp = (float)tab_median[middle];
+			temp = (float)tab_median[middle];*/
 			
 			b = 0;
 			c = 0;
@@ -340,6 +320,24 @@ void *thread_4(void *arg)
 		if (consigne < COMMANDE_INC) consigne = COMMANDE_INC;
 
 		delay(500);
+	
+	}while(1);
+	
+    (void) arg;
+    pthread_exit(NULL);
+}
+
+void *thread_5(void *arg)
+{
+	char chaine[MAX_STR];
+	
+	do
+	{
+		//printf("Quel est votre nom ? ");
+		fgets(chaine, MAX_STR, stdin);
+		//printf("Vitesse: %s", chaine);
+		
+		consigne = atof(chaine);
 	
 	}while(1);
 	
