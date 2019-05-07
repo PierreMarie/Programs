@@ -7,7 +7,7 @@
 #define MEAN 5
 #define MEAN_COMMAND 3
 #define CONSIGNE_INIT 5.0				// 12.0
-#define COMMANDE_MIN 400				// 2.69V
+#define COMMANDE_MIN 600				// 2.69V
 #define COMMANDE_MAX 1023				// 4.40V
 #define LAUNCH 700.0
 		
@@ -18,7 +18,7 @@
 #define PERIODE_ECH 10
 #define MAX_STR 10
 #define Te 0.01
-#define DERIV_MAX 200.0
+#define DERIV_MAX 300.0
 
 // Min		Max
 // 2.69V	4.4V
@@ -75,8 +75,8 @@ int main (void)
 	c = 0;		// 0
 	
 	consigne = CONSIGNE_INIT; 
-	commande = COMMANDE_MAX;
-	commande_prev = COMMANDE_MAX;
+	commande = COMMANDE_MIN;
+	commande_prev = COMMANDE_MIN;
 	
 	erreur = 0.0;
 	erreur_prev = 0.0;
@@ -118,11 +118,11 @@ void *thread_1(void *arg)
 {
 	float P = 0.0, I = LAUNCH, D = 0.0;
 
-	float tab_mean[MEAN_COMMAND] = {0.0}, temp, sum;
+	//float tab_mean[MEAN_COMMAND] = {0.0}, sum, temp;
 
-	int i;
+	//int i;
 		
-	//printf("En attente du dÃ©marrage du moteur ...\n");
+	//printf("En attente du démarrage du moteur ...\n");
 	//printf("\nKp : %f\t\tKi : %f\t\tKd : %f\n\n", KPIDp, KPIDi, KPIDd);
 	
 	///********************************************************///	TEST DEAD LOCK
@@ -139,8 +139,8 @@ void *thread_1(void *arg)
 		erreur = consigne - speed_real;
 		
 		///*************************************///	Fourchette
-		//if( speed_real < consigne ) 	{	if( commande < COMMANDE_MAX ) commande += COMMANDE_INC; }
-		//else			 				{	if( commande > COMMANDE_MIN ) commande -= COMMANDE_INC; }
+		//if( speed_real < consigne ) {	if( commande < COMMANDE_MAX ) commande += COMMANDE_INC; }
+		//else			 				   {	if( commande > COMMANDE_MIN ) commande -= COMMANDE_INC; }
 		
 		///*************************************///	PID
 		
@@ -152,8 +152,18 @@ void *thread_1(void *arg)
 		}
 
 		D = (Kd / Te) * (erreur - erreur_prev);
-		
-		if ( abs(D) > DERIV_MAX )	D = 0.0;
+      
+      if( abs(D) > DERIV_MAX )
+      {
+         if ( D >= 0.0 )
+         {
+            D = DERIV_MAX;
+         }
+         else if ( D < 0.0 )
+         {
+            D = -1.0*DERIV_MAX;
+         }
+      }		
 
 		commande = P + I + D;
 
@@ -165,7 +175,7 @@ void *thread_1(void *arg)
 		
 		//printf("Speed : %.1f tr/s\tCmd : %.0f\t\tP : %.0f\t\tI : %.0f\t\tD : %.0f\tRef : %.1f\t%d\n", speed_real, commande, P, I, D, consigne, state);
 
-		sum = 0;
+		/*sum = 0;
 		
 		for( i=0; i<MEAN_COMMAND-1; i++ )
 		{
@@ -176,12 +186,12 @@ void *thread_1(void *arg)
 		tab_mean[MEAN_COMMAND-1] = commande;
 		sum += tab_mean[MEAN_COMMAND-1];
 			
-		temp=(float)sum/MEAN_COMMAND;
+		temp=(float)sum/MEAN_COMMAND;*/
 				
 		if(state == 0)
 		{
-			//pwmWrite (1, (int)commande);
-			pwmWrite (1, (int)temp);
+			pwmWrite (1, (int)commande);
+			//pwmWrite (1, (int)temp);
 			
 			//fprintf(fichier, "%.1f;%.1f;%.1f;%.1f;%.1f;%.1f\n", speed_real, temp, consigne, P, I, D);
 		}
@@ -329,15 +339,17 @@ void *thread_4(void *arg)
 
 void *thread_5(void *arg)
 {
-	char chaine[MAX_STR];
+	//char chaine[MAX_STR];
 	
 	do
 	{
 		//printf("Quel est votre nom ? ");
-		fgets(chaine, MAX_STR, stdin);
+		//fgets(chaine, MAX_STR, stdin);
 		//printf("Vitesse: %s", chaine);
 		
-		consigne = atof(chaine);
+		//consigne = atof(chaine);
+      
+      delay(1000);
 	
 	}while(1);
 	
