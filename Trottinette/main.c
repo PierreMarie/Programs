@@ -1,32 +1,35 @@
-#include <stdio.h>
+#include <stdio.h> 
 #include <stdlib.h> 
 #include <pthread.h>
 
 #include "wiringPi.h"
 
+#define K_osc 50.0
+#define T_osc 7.0
+
+#define Kp (0.6*K_osc)					// 12.0
+#define Ki (0.6*K_osc*2.0)/T_osc		// 0.1
+#define Kd (0.6*K_osc*T_osc)/8.0		// 4.3
+
 #define MEAN 5
-#define MEAN_COMMAND 10
-#define CONSIGNE_INIT 2.0				// 12.0
+#define MEAN_COMMAND 5
+#define CONSIGNE_INIT 5.0				// 12.0
 #define COMMANDE_MIN 500				// 2.69V
 #define COMMANDE_MAX 1023				// 4.40V
-#define LAUNCH 600.0
+#define I_INIT 800.0
 		
-#define COMMANDE_INC 1.0
+#define COMMANDE_INC 2.0
 #define MAX_COUNT 1000.0/15.0			// 1 tr/s
 #define LOOP_DURATION 1.0
 #define GAIN_TEMPO LOOP_DURATION * 1000.0 / 15.0
 #define PERIODE_ECH 10
 #define MAX_STR 10
 #define Te 0.01
-#define DERIV_MAX 150.0
+#define DERIV_MAX 1000.0
 
 // Min		Max
 // 2.69V	4.4V
 // 460		65
-
-#define Kp 100.0	// 12.0
-#define Ki 0.1		// 0.1
-#define Kd 5.0		// 4.3
 
 pthread_mutex_t mutex_update = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_speed_real = PTHREAD_MUTEX_INITIALIZER;
@@ -116,13 +119,13 @@ int main (void)
 
 void *thread_1(void *arg)
 {
-	float P = 0.0, I = LAUNCH, D = 0.0;
+	float P = 0.0, I = I_INIT, D = 0.0;
 
 	float tab_mean[MEAN_COMMAND] = {0.0}, sum, temp;
 
 	int i;
 		
-	//printf("En attente du démarrage du moteur ...\n");
+	//printf("En attente du dÃ©marrage du moteur ...\n");
 	//printf("\nKp : %f\t\tKi : %f\t\tKd : %f\n\n", KPIDp, KPIDi, KPIDd);
 	
 	///********************************************************///	TEST DEAD LOCK
@@ -139,8 +142,8 @@ void *thread_1(void *arg)
 		erreur = consigne - speed_real;
 		
 		///*************************************///	Fourchette
-		//if( speed_real < consigne ) {	if( commande < COMMANDE_MAX ) commande += COMMANDE_INC; }
-		//else			 				   {	if( commande > COMMANDE_MIN ) commande -= COMMANDE_INC; }
+		//if( speed_real < consigne )	{	if( commande < COMMANDE_MAX ) commande += COMMANDE_INC; }
+		//else			 				{	if( commande > COMMANDE_MIN ) commande -= COMMANDE_INC; }
 		
 		///*************************************///	PID
 		
@@ -198,6 +201,7 @@ void *thread_1(void *arg)
 		else
 		{
 			pwmWrite (1, (int)COMMANDE_MIN) ;
+			I = I_INIT;
 		}
 
 		commande_prev = commande;
@@ -300,7 +304,7 @@ void *thread_3(void *arg)
 		if ( digitalRead(3)==1 )
 		{
 			state ^= 1;
-			delay(500);
+			delay(1000);
 		}
 		
 		delay(10);
