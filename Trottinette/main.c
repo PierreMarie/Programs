@@ -5,11 +5,11 @@
 #include "wiringPi.h"
 
 #define MEAN 5
-#define MEAN_COMMAND 3
-#define CONSIGNE_INIT 5.0				// 12.0
-#define COMMANDE_MIN 600				// 2.69V
+#define MEAN_COMMAND 10
+#define CONSIGNE_INIT 2.0				// 12.0
+#define COMMANDE_MIN 500				// 2.69V
 #define COMMANDE_MAX 1023				// 4.40V
-#define LAUNCH 700.0
+#define LAUNCH 600.0
 		
 #define COMMANDE_INC 1.0
 #define MAX_COUNT 1000.0/15.0			// 1 tr/s
@@ -18,13 +18,13 @@
 #define PERIODE_ECH 10
 #define MAX_STR 10
 #define Te 0.01
-#define DERIV_MAX 300.0
+#define DERIV_MAX 150.0
 
 // Min		Max
 // 2.69V	4.4V
 // 460		65
 
-#define Kp 100.0		// 12.0
+#define Kp 100.0	// 12.0
 #define Ki 0.1		// 0.1
 #define Kd 5.0		// 4.3
 
@@ -118,9 +118,9 @@ void *thread_1(void *arg)
 {
 	float P = 0.0, I = LAUNCH, D = 0.0;
 
-	//float tab_mean[MEAN_COMMAND] = {0.0}, sum, temp;
+	float tab_mean[MEAN_COMMAND] = {0.0}, sum, temp;
 
-	//int i;
+	int i;
 		
 	//printf("En attente du démarrage du moteur ...\n");
 	//printf("\nKp : %f\t\tKi : %f\t\tKd : %f\n\n", KPIDp, KPIDi, KPIDd);
@@ -153,17 +153,17 @@ void *thread_1(void *arg)
 
 		D = (Kd / Te) * (erreur - erreur_prev);
       
-      if( abs(D) > DERIV_MAX )
-      {
-         if ( D >= 0.0 )
-         {
-            D = DERIV_MAX;
-         }
-         else if ( D < 0.0 )
-         {
-            D = -1.0*DERIV_MAX;
-         }
-      }		
+		if( abs(D) > DERIV_MAX )
+		{
+			if ( D >= 0.0 )
+			{
+				D = DERIV_MAX;
+			}
+			else if ( D < 0.0 )
+			{
+				D = -1.0*DERIV_MAX;
+			}
+		}		
 
 		commande = P + I + D;
 
@@ -175,7 +175,7 @@ void *thread_1(void *arg)
 		
 		//printf("Speed : %.1f tr/s\tCmd : %.0f\t\tP : %.0f\t\tI : %.0f\t\tD : %.0f\tRef : %.1f\t%d\n", speed_real, commande, P, I, D, consigne, state);
 
-		/*sum = 0;
+		sum = 0;
 		
 		for( i=0; i<MEAN_COMMAND-1; i++ )
 		{
@@ -186,12 +186,12 @@ void *thread_1(void *arg)
 		tab_mean[MEAN_COMMAND-1] = commande;
 		sum += tab_mean[MEAN_COMMAND-1];
 			
-		temp=(float)sum/MEAN_COMMAND;*/
+		temp=(float)sum/MEAN_COMMAND;
 				
 		if(state == 0)
 		{
-			pwmWrite (1, (int)commande);
-			//pwmWrite (1, (int)temp);
+			//pwmWrite (1, (int)commande);
+			pwmWrite (1, (int)temp);
 			
 			//fprintf(fichier, "%.1f;%.1f;%.1f;%.1f;%.1f;%.1f\n", speed_real, temp, consigne, P, I, D);
 		}
