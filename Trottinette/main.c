@@ -4,8 +4,8 @@
 
 #include "wiringPi.h"
 
-#define K_osc 100.0
-#define T_osc 7.0
+#define K_osc 30.0
+#define T_osc 1.0
 
                                     // OLD      // Ziegler & Nichols pour K_osc = 100
 #define Kp (0.6*K_osc)					// 12.0     // 60
@@ -17,7 +17,7 @@
 #define CONSIGNE_INIT 5.0				// 12.0
 #define COMMANDE_MIN 500				// 2.69V
 #define COMMANDE_MAX 1023				// 4.40V
-#define I_INIT 700.0
+#define I_INIT 750.0
 		
 #define COMMANDE_INC 2.0
 #define MAX_COUNT 1000.0/15.0			// 1 tr/s
