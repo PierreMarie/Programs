@@ -1,22 +1,23 @@
-#include <stdio.h> 
+﻿#include <stdio.h> 
 #include <stdlib.h> 
 #include <pthread.h>
 
 #include "wiringPi.h"
 
-#define K_osc 50.0
+#define K_osc 100.0
 #define T_osc 7.0
 
-#define Kp (0.6*K_osc)					// 12.0
-#define Ki (0.6*K_osc*2.0)/T_osc		// 0.1
-#define Kd (0.6*K_osc*T_osc)/8.0		// 4.3
+                                    // OLD      // Ziegler & Nichols pour K_osc = 100
+#define Kp (0.6*K_osc)					// 12.0     // 60
+#define Ki (0.6*K_osc*2.0)/T_osc		// 0.1      // 17
+#define Kd (0.6*K_osc*T_osc)/8.0		// 4.3      // 53
 
 #define MEAN 5
 #define MEAN_COMMAND 5
 #define CONSIGNE_INIT 5.0				// 12.0
 #define COMMANDE_MIN 500				// 2.69V
 #define COMMANDE_MAX 1023				// 4.40V
-#define I_INIT 800.0
+#define I_INIT 700.0
 		
 #define COMMANDE_INC 2.0
 #define MAX_COUNT 1000.0/15.0			// 1 tr/s
@@ -112,7 +113,11 @@ int main (void)
 	return EXIT_FAILURE;
 	}
 	
-	while(1);
+	do
+   {
+      delay(10);
+      
+   }while(1);
 
 	return 0;
 }
@@ -125,7 +130,7 @@ void *thread_1(void *arg)
 
 	int i;
 		
-	//printf("En attente du démarrage du moteur ...\n");
+	//printf("En attente du dÃ©marrage du moteur ...\n");
 	//printf("\nKp : %f\t\tKi : %f\t\tKd : %f\n\n", KPIDp, KPIDi, KPIDd);
 	
 	///********************************************************///	TEST DEAD LOCK
@@ -149,7 +154,7 @@ void *thread_1(void *arg)
 		
 		P = Kp * erreur;
 				
-		if( ( commande < COMMANDE_MAX && state == 0 ) || ( erreur < 0.0 && state == 0 ) )
+		if( commande < COMMANDE_MAX && state == 0 )
 		{
 			I += Ki * Te * erreur;
 		}
@@ -353,7 +358,7 @@ void *thread_5(void *arg)
 		
 		//consigne = atof(chaine);
       
-      delay(1000);
+      delay(10);
 	
 	}while(1);
 	
