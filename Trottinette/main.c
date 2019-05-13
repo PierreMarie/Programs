@@ -4,29 +4,32 @@
 
 #include "wiringPi.h"
 
-#define K_osc 30.0
-#define T_osc 1.0
+#define K_osc 120.0
+#define T_osc 15.0
 
                                     // OLD      // Ziegler & Nichols pour K_osc = 100
 #define Kp (0.6*K_osc)					// 12.0     // 60
 #define Ki (0.6*K_osc*2.0)/T_osc		// 0.1      // 17
 #define Kd (0.6*K_osc*T_osc)/8.0		// 4.3      // 53
 
+#define ERROR_INTEGRATE 3.0
+#define MAX_INTEGRATE 500.0
+#define I_INIT 800.0
+
 #define MEAN 5
 #define MEAN_COMMAND 5
 #define CONSIGNE_INIT 5.0				// 12.0
 #define COMMANDE_MIN 500				// 2.69V
 #define COMMANDE_MAX 1023				// 4.40V
-#define I_INIT 750.0
 		
-#define COMMANDE_INC 2.0
+#define COMMANDE_INC 1.0
 #define MAX_COUNT 1000.0/15.0			// 1 tr/s
 #define LOOP_DURATION 1.0
 #define GAIN_TEMPO LOOP_DURATION * 1000.0 / 15.0
 #define PERIODE_ECH 10
 #define MAX_STR 10
 #define Te 0.01
-#define DERIV_MAX 1000.0
+#define DERIV_MAX 500.0
 
 // Min		Max
 // 2.69V	4.4V
@@ -154,7 +157,7 @@ void *thread_1(void *arg)
 		
 		P = Kp * erreur;
 				
-		if( commande < COMMANDE_MAX && state == 0 )
+		if( (abs(erreur) < ERROR_INTEGRATE) && (abs(I) < MAX_INTEGRATE) && (commande < COMMANDE_MAX) && state == 0 )
 		{
 			I += Ki * Te * erreur;
 		}
