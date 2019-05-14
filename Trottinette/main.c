@@ -169,7 +169,7 @@ void *thread_1(void *arg)
       }
             
       //if( (abs(erreur) < ERROR_INTEGRATE) && (abs(I) < MAX_INTEGRATE) && (commande < COMMANDE_MAX) && state == 0 )
-      if( (start == 0) && (commande < COMMANDE_MAX) && state == 0 )
+      if( start == 0 )
       {
          I += Ki * Te * erreur;
       }
