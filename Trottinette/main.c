@@ -13,7 +13,6 @@
 
 // I
 #define START_THRESHOLD 3.0
-#define MAX_INTEGRATE 1000.0
 #define I_INIT 800.0
 
 // D
@@ -174,17 +173,14 @@ void *thread_1(void *arg)
       {
          I += Ki * Te * erreur;
       }
-      
-      if( abs(I) > MAX_INTEGRATE )
+
+      if ( I > COMMANDE_MAX )
       {
-         if ( I >= 0.0 )
-         {
-            I = MAX_INTEGRATE;
-         }
-         else if ( I < 0.0 )
-         {
-            I = -1.0*MAX_INTEGRATE;
-         }
+         I = COMMANDE_MAX;
+      }
+      else if ( I < COMMANDE_MIN )
+      {
+         I = COMMANDE_MIN;
       }
 
       D = (Kd / Te) * (erreur - erreur_prev);
