@@ -5,21 +5,23 @@
 #include "wiringPi.h"
 
 #define K_osc 120.0
-#define T_osc 15.0
+#define T_osc 9.0
                                     // Ziegler & Nichols pour K_osc = 120 & T_osc = 15
 #define Kp (0.6*K_osc)              // 72
 #define Ki (0.6*K_osc*2.0)/T_osc    // 10
 #define Kd (0.6*K_osc*T_osc)/8.0    // 108
 
 // I
-#define START_THRESHOLD 3.0
+#define START_THRESHOLD 0.0
 #define I_INIT 800.0
+#define INTEGRATE_MAX 2000.0
 
 // D
 #define DERIV_MAX 300.0
 
+#define TEMPO_START 1.0
 #define MEAN 5
-#define MEAN_COMMAND 5
+#define MEAN_COMMAND 3
 #define CONSIGNE_INIT 5.0           // 12.0
 #define COMMANDE_MIN 500            // 2.69V
 #define COMMANDE_MAX 1023           // 4.40V
@@ -132,7 +134,7 @@ void *thread_1(void *arg)
 
    float tab_mean[MEAN_COMMAND] = {0.0}, sum, temp;
 
-   int i, start;
+   int i;
       
    //printf("En attente du dÃ©marrage du moteur ...\n");
    //printf("\nKp : %f\t\tKi : %f\t\tKd : %f\n\n", KPIDp, KPIDi, KPIDd);
@@ -157,26 +159,15 @@ void *thread_1(void *arg)
       ///*************************************///   PID
       
       P = Kp * erreur;
-      
-      if( erreur > (consigne/START_THRESHOLD) )
-      {
-         start = 1;
-         I = I_INIT;
-      }
-      else
-      {
-         start = 0;
-      }
-            
-      //if( (abs(erreur) < ERROR_INTEGRATE) && (abs(I) < MAX_INTEGRATE) && (commande < COMMANDE_MAX) && state == 0 )
-      if( start == 0 )
+
+      if( (abs(erreur) < START_THRESHOLD) && (commande < COMMANDE_MAX) && (state == 0) )
       {
          I += Ki * Te * erreur;
       }
 
-      if ( I > COMMANDE_MAX )
+      if ( I > INTEGRATE_MAX )
       {
-         I = COMMANDE_MAX;
+         I = INTEGRATE_MAX;
       }
       else if ( I < COMMANDE_MIN )
       {
@@ -205,7 +196,7 @@ void *thread_1(void *arg)
                
       if( consigne == 0 )   commande = 0.0;
       
-      //printf("Speed : %.1f tr/s\tCmd : %.0f\t\tP : %.0f\t\tI : %.0f\t\tD : %.0f\tRef : %.1f\t%d\n", speed_real, commande, P, I, D, consigne, state);
+      // printf("Speed : %.1f tr/s\tCmd : %.0f\t\tP : %.0f\t\tI : %.0f\t\tD : %.0f\tRef : %.1f\t%d\n", speed_real, commande, P, I, D, consigne, state);
 
       sum = 0;
       
@@ -328,14 +319,13 @@ void *thread_3(void *arg)
 {
    do
    {
-      state_previous = state;
-      
       if ( digitalRead(3)==1 )
       {
+         state_previous = state;
          state ^= 1;
          delay(1000);
       }
-      
+
       delay(10);
    
    }while(1);
@@ -373,6 +363,8 @@ void *thread_4(void *arg)
 void *thread_5(void *arg)
 {
    //char chaine[MAX_STR];
+   int i, step;
+   float consigne_temp;
    
    do
    {
@@ -382,6 +374,21 @@ void *thread_5(void *arg)
       
       //consigne = atof(chaine);
       
+      if( (state_previous == 1) && (state == 0) )
+      {
+         state_previous = 0;
+         step = (int)consigne;
+         consigne_temp = consigne;
+         
+         for( i= (int)speed_real; i<step; i++ )
+         {
+            consigne = (int)i;
+            delay(TEMPO_START*1000);
+         }
+         
+         consigne = consigne_temp;
+      }
+            
       delay(10);
    
    }while(1);
