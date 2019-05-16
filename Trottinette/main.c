@@ -12,7 +12,6 @@
 #define Kd (0.6*K_osc*T_osc)/8.0    // 108
 
 // I
-#define START_THRESHOLD 0.0
 #define I_INIT 800.0
 #define INTEGRATE_MAX 2000.0
 
@@ -26,7 +25,7 @@
 #define COMMANDE_MIN 500            // 2.69V
 #define COMMANDE_MAX 1023           // 4.40V
       
-#define COMMANDE_INC 1.0
+#define COMMANDE_INC 2.0
 #define MAX_COUNT 1000.0/15.0       // 1 tr/s
 #define LOOP_DURATION 1.0
 #define GAIN_TEMPO LOOP_DURATION * 1000.0 / 15.0
@@ -49,7 +48,9 @@ void *thread_5(void *arg);
 
 float speed_real, erreur, erreur_prev, erreur_prev_prev, commande, commande_prev, consigne;
 long int b, c;
-char update, work, start = 0;
+
+char start = 0;   //   OFF = 0
+                  //   ON  = 1;
 
 char state = 1, state_previous = 1;    //   OFF = 1
                                        //   ON  = 0;
@@ -130,7 +131,7 @@ int main (void)
 
 void *thread_1(void *arg)
 {
-   float P = 0.0, I = I_INIT, D = 0.0;
+   float P, I = I_INIT, D;
 
    float tab_mean[MEAN_COMMAND] = {0.0}, sum, temp;
 
@@ -160,7 +161,7 @@ void *thread_1(void *arg)
       
       P = Kp * erreur;
 
-      if( (abs(erreur) < START_THRESHOLD) && (commande < COMMANDE_MAX) && (state == 0) )
+      if( (commande < COMMANDE_MAX) && (state == 0) )
       {
          I += Ki * Te * erreur;
       }
@@ -211,16 +212,11 @@ void *thread_1(void *arg)
          
       temp=(float)sum/MEAN_COMMAND;
             
-      if(state == 0)
+      if( state == 0 )
       {
-         if( start == 1 )
-         {
-            pwmWrite (1, (int)COMMANDE_MAX);
-         }
-         else
-         {
-            pwmWrite (1, (int)temp);
-         }
+         if( start == 1 )  pwmWrite (1, (int)COMMANDE_MAX);
+         else              pwmWrite (1, (int)temp);
+
          //fprintf(fichier, "%.1f;%.1f;%.1f;%.1f;%.1f;%.1f\n", speed_real, temp, consigne, P, I, D);
       }
       else
