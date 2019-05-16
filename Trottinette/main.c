@@ -19,11 +19,11 @@
 // D
 #define DERIV_MAX 300.0
 
-#define DELTA_START 1.0
+#define DELTA_START 2.0
 #define TEMPO_START 1.0
 #define MEAN 5
 #define MEAN_COMMAND 5
-#define CONSIGNE_INIT 6.0           // 12.0
+#define CONSIGNE_INIT 5.0           // 12.0
 #define COMMANDE_MIN 500            // 2.69V
 #define COMMANDE_MAX 1023           // 4.40V
       
@@ -198,7 +198,7 @@ void *thread_1(void *arg)
                
       if( consigne == 0 )   commande = 0.0;
       
-      // printf("Speed : %.1f tr/s\tCmd : %.0f\t\tP : %.0f\t\tI : %.0f\t\tD : %.0f\tRef : %.1f\t%d\n", speed_real, commande, P, I, D, consigne, state);
+      //printf("Speed : %.1f tr/s\tCmd : %.0f\t\tP : %.0f\t\tI : %.0f\t\tD : %.0f\tRef : %.1f\t%d\n", speed_real, commande, P, I, D, consigne, state);
 
       sum = 0;
       
@@ -363,8 +363,7 @@ void *thread_4(void *arg)
 void *thread_5(void *arg)
 {
    //char chaine[MAX_STR];
-   int i, step;
-   float consigne_temp;
+   float consigne_temp, i, step;
    
    do
    {
@@ -377,16 +376,16 @@ void *thread_5(void *arg)
       if( (state_previous == 1) && (state == 0) )
       {
          state_previous = 0;
-         step = (int)consigne;
+         step = consigne;
          consigne_temp = consigne;
 
-         for( i= (int)speed_real; i<step; i++ )
+         for( i=speed_real; i<step; i=i+0.1 )
          {
             if( consigne_temp >= (speed_real + (consigne_temp - DELTA_START)) )  start = 1;
-            else                                               start = 0;
+            else                                                                 start = 0;
          
-            consigne = (float)i;
-            delay(TEMPO_START*1000);
+            consigne = i;
+            delay(TEMPO_START*100);
          }
          
          consigne = consigne_temp;
