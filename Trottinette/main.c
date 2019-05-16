@@ -9,7 +9,7 @@
                                     // Ziegler & Nichols pour K_osc = 120 & T_osc = 15
 #define Kp (0.6*K_osc)              // 72
 //#define Ki (0.6*K_osc*2.0)/T_osc    // 10
-#define Ki 0.5
+#define Ki 1.0
 #define Kd (0.6*K_osc*T_osc)/8.0    // 108
 
 // I
@@ -19,15 +19,15 @@
 // D
 #define DERIV_MAX 300.0
 
-#define DELTA_START 3.0
+#define DELTA_START 1.0
 #define TEMPO_START 1.0
 #define MEAN 5
 #define MEAN_COMMAND 5
-#define CONSIGNE_INIT 5.0           // 12.0
+#define CONSIGNE_INIT 6.0           // 12.0
 #define COMMANDE_MIN 500            // 2.69V
 #define COMMANDE_MAX 1023           // 4.40V
       
-#define COMMANDE_INC 2.0
+#define COMMANDE_INC 1.0
 #define MAX_COUNT 1000.0/15.0       // 1 tr/s
 #define LOOP_DURATION 1.0
 #define GAIN_TEMPO LOOP_DURATION * 1000.0 / 15.0
@@ -382,7 +382,7 @@ void *thread_5(void *arg)
 
          for( i= (int)speed_real; i<step; i++ )
          {
-            if( consigne_temp >= (speed_real + DELTA_START) )  start = 1;
+            if( consigne_temp >= (speed_real + (consigne_temp - DELTA_START)) )  start = 1;
             else                                               start = 0;
          
             consigne = (float)i;
