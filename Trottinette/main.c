@@ -8,7 +8,8 @@
 #define T_osc 9.0
                                     // Ziegler & Nichols pour K_osc = 120 & T_osc = 15
 #define Kp (0.6*K_osc)              // 72
-#define Ki (0.6*K_osc*2.0)/T_osc    // 10
+//#define Ki (0.6*K_osc*2.0)/T_osc    // 10
+#define Ki 0.5
 #define Kd (0.6*K_osc*T_osc)/8.0    // 108
 
 // I
@@ -18,6 +19,7 @@
 // D
 #define DERIV_MAX 300.0
 
+#define DELTA_START 3.0
 #define TEMPO_START 1.0
 #define MEAN 5
 #define MEAN_COMMAND 5
@@ -383,10 +385,10 @@ void *thread_5(void *arg)
 
          for( i= (int)speed_real; i<step; i++ )
          {
-            if( consigne_temp >= (speed_real + 3.0) ) start = 1;
-            else                                      start = 0;
+            if( consigne_temp >= (speed_real + DELTA_START) )  start = 1;
+            else                                               start = 0;
          
-            consigne = (int)i;
+            consigne = (float)i;
             delay(TEMPO_START*1000);
          }
          
