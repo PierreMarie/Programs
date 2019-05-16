@@ -48,7 +48,7 @@ void *thread_3(void *arg);
 void *thread_4(void *arg);
 void *thread_5(void *arg);
 
-float speed_real, erreur, erreur_prev, erreur_prev_prev, commande, commande_prev, consigne;
+float speed_real, erreur, erreur_prev, erreur_prev_prev, commande, consigne;
 long int b, c;
 
 char start = 0;   //   OFF = 0
@@ -73,7 +73,7 @@ int main (void)
 
    pinMode (24, INPUT) ;            // Speed measurement
    
-   pinMode (3, OUTPUT) ;            // Start / Stop regulatore
+   pinMode (3, OUTPUT) ;            // Start / Stop regulation
    pullUpDnControl (3, PUD_DOWN);
    
    pinMode (27, INPUT) ;            // Increase speed
@@ -89,7 +89,6 @@ int main (void)
    
    consigne = CONSIGNE_INIT; 
    commande = COMMANDE_MIN;
-   commande_prev = COMMANDE_MIN;
    
    erreur = 0.0;
    erreur_prev = 0.0;
@@ -226,8 +225,6 @@ void *thread_1(void *arg)
          pwmWrite (1, (int)COMMANDE_MIN) ;
          I = I_INIT;
       }
-
-      commande_prev = commande;
       
       erreur_prev = erreur;
       erreur_prev_prev = erreur_prev;
