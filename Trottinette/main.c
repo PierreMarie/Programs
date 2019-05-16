@@ -21,7 +21,7 @@
 
 #define TEMPO_START 1.0
 #define MEAN 5
-#define MEAN_COMMAND 3
+#define MEAN_COMMAND 5
 #define CONSIGNE_INIT 5.0           // 12.0
 #define COMMANDE_MIN 500            // 2.69V
 #define COMMANDE_MAX 1023           // 4.40V
@@ -49,7 +49,7 @@ void *thread_5(void *arg);
 
 float speed_real, erreur, erreur_prev, erreur_prev_prev, commande, commande_prev, consigne;
 long int b, c;
-char update, work;
+char update, work, start = 0;
 
 char state = 1, state_previous = 1;    //   OFF = 1
                                        //   ON  = 0;
@@ -213,9 +213,14 @@ void *thread_1(void *arg)
             
       if(state == 0)
       {
-         //pwmWrite (1, (int)commande);
-         pwmWrite (1, (int)temp);
-         
+         if( start == 1 )
+         {
+            pwmWrite (1, (int)COMMANDE_MAX);
+         }
+         else
+         {
+            pwmWrite (1, (int)temp);
+         }
          //fprintf(fichier, "%.1f;%.1f;%.1f;%.1f;%.1f;%.1f\n", speed_real, temp, consigne, P, I, D);
       }
       else
@@ -379,9 +384,12 @@ void *thread_5(void *arg)
          state_previous = 0;
          step = (int)consigne;
          consigne_temp = consigne;
-         
+
          for( i= (int)speed_real; i<step; i++ )
          {
+            if( consigne_temp >= (speed_real + 3.0) ) start = 1;
+            else                                      start = 0;
+         
             consigne = (int)i;
             delay(TEMPO_START*1000);
          }
