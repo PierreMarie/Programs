@@ -4,25 +4,25 @@
 
 #include "wiringPi.h"
 
-#define K_osc 120.0
-#define T_osc 9.0
-                                    // Ziegler & Nichols pour K_osc = 120 & T_osc = 15
-#define Kp (0.6*K_osc)              // 72
-//#define Ki (0.6*K_osc*2.0)/T_osc    // 10
+#define K_osc 100.0
+#define T_osc 5.0
+                                       // Ziegler & Nichols pour K_osc = 100 & T_osc = 5
+#define Kp (0.6*K_osc)                 // 60
+//#define Ki (0.6*K_osc*2.0)/T_osc     // 24
 #define Ki 1.0
-#define Kd (0.6*K_osc*T_osc)/8.0    // 108
+#define Kd (0.6*K_osc*T_osc)/8.0       // 37.5
 
 // I
 #define I_INIT 800.0
 #define INTEGRATE_MAX 2000.0
 
 // D
-#define DERIV_MAX 300.0
+#define DERIV_MAX 1000.0
 
 #define DELTA_START 2.0
 #define TEMPO_START 1.0
 #define MEAN 5
-#define MEAN_COMMAND 5
+#define MEAN_COMMAND 1
 #define CONSIGNE_INIT 5.0           // 12.0
 #define COMMANDE_MIN 500            // 2.69V
 #define COMMANDE_MAX 1023           // 4.40V
@@ -215,8 +215,10 @@ void *thread_1(void *arg)
             
       if( state == 0 )
       {
-         if( start == 1 )  pwmWrite (1, (int)COMMANDE_MAX);
-         else              pwmWrite (1, (int)temp);
+         //if( start == 1 )  pwmWrite (1, (int)COMMANDE_MAX);
+         //else              pwmWrite (1, (int)temp);
+         
+         pwmWrite (1, (int)commande);
 
          //fprintf(fichier, "%.1f;%.1f;%.1f;%.1f;%.1f;%.1f\n", speed_real, temp, consigne, P, I, D);
       }
@@ -381,14 +383,14 @@ void *thread_5(void *arg)
 
          for( i=speed_real; i<step; i=i+0.1 )
          {
-            if( consigne_temp >= (speed_real + (consigne_temp - DELTA_START)) )  start = 1;
-            else                                                                 start = 0;
+            //if( consigne_temp >= (speed_real + (consigne_temp - DELTA_START)) )  start = 1;
+            //else                                                                 start = 0;
          
-            consigne = i;
+//            consigne = i;
             delay(TEMPO_START*100);
          }
          
-         consigne = consigne_temp;
+  //       consigne = consigne_temp;
       }
             
       delay(10);
