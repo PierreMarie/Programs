@@ -29,7 +29,7 @@
 #define COMMANDE_MIN 500            // 2.69V
 #define COMMANDE_MAX 1023           // 4.40V
       
-#define COMMANDE_INC 1.0
+#define COMMANDE_INC 2.0
 #define MAX_COUNT 1000.0/15.0       // 1 tr/s
 #define LOOP_DURATION 1.0
 #define GAIN_TEMPO LOOP_DURATION * 1000.0 / 15.0
@@ -136,9 +136,9 @@ void *thread_1(void *arg)
 {
    float P, I = I_INIT, D;
 
-   float tab_mean[MEAN_COMMAND] = {0.0}, sum, temp;
+   //float tab_mean[MEAN_COMMAND] = {0.0}, sum, temp;
 
-   int i;
+   //int i;
       
    //printf("En attente du dÃ©marrage du moteur ...\n");
    //printf("\nKp : %f\t\tKi : %f\t\tKd : %f\n\n", KPIDp, KPIDi, KPIDd);
@@ -204,7 +204,7 @@ void *thread_1(void *arg)
       
       //printf("Speed : %.1f tr/s\tCmd : %.0f\t\tP : %.0f\t\tI : %.0f\t\tD : %.0f\tRef : %.1f\t%d\n", speed_real, commande, P, I, D, consigne, state);
 
-      sum = 0;
+      /*sum = 0;
       
       for( i=0; i<MEAN_COMMAND-1; i++ )
       {
@@ -215,7 +215,7 @@ void *thread_1(void *arg)
       tab_mean[MEAN_COMMAND-1] = commande;
       sum += tab_mean[MEAN_COMMAND-1];
          
-      temp=(float)sum/MEAN_COMMAND;
+      temp=(float)sum/MEAN_COMMAND;*/
             
       if( state == 0 )
       {
@@ -370,7 +370,7 @@ void *thread_4(void *arg)
 void *thread_5(void *arg)
 {
    //char chaine[MAX_STR];
-   float consigne_temp, i, step;
+   //float consigne_temp, i, step;
    
    do
    {
@@ -380,7 +380,7 @@ void *thread_5(void *arg)
       
       //consigne = atof(chaine);
       
-      if( (state_previous == 1) && (state == 0) )
+      /*if( (state_previous == 1) && (state == 0) )
       {
          state_previous = 0;
          step = consigne;
@@ -396,7 +396,7 @@ void *thread_5(void *arg)
          }
          
   //       consigne = consigne_temp;
-      }
+      }*/
             
       delay(10);
    
