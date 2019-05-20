@@ -9,19 +9,22 @@
                                        // Ziegler & Nichols pour K_osc = 100 & T_osc = 5
 #define Kp (0.6*K_osc)                 // 60
 //#define Ki (0.6*K_osc*2.0)/T_osc     // 24
-#define Ki 0.0
+#define Ki 2.0
 #define Kd (0.6*K_osc*T_osc)/8.0       // 37.5
 
+#define A_I_Init 5.45
+#define B_I_Init 639.0
+
 // I
-#define I_INIT 800.0
+#define I_INIT 700.0
 #define INTEGRATE_MAX 1000.0
+#define INTEGRATE_MIN 500.0
 
 // D
 #define DERIV_MAX 1000.0
 
 #define INC_START 1.0
 #define TEMPO_START INC_START * 10.0
-//#define DELTA_START 2.0
 
 #define MEAN 5
 #define MEAN_COMMAND 1
@@ -29,7 +32,7 @@
 #define COMMANDE_MIN 500            // 2.69V
 #define COMMANDE_MAX 1023           // 4.40V
       
-#define COMMANDE_INC 2.0
+#define COMMANDE_INC 1.0
 #define MAX_COUNT 1000.0/15.0       // 1 tr/s
 #define LOOP_DURATION 1.0
 #define GAIN_TEMPO LOOP_DURATION * 1000.0 / 15.0
@@ -50,7 +53,7 @@ void *thread_3(void *arg);
 void *thread_4(void *arg);
 void *thread_5(void *arg);
 
-float speed_real, erreur, erreur_prev, erreur_prev_prev, commande, consigne;
+float speed_real, erreur, erreur_prev, erreur_prev_prev, commande, consigne, I = I_INIT;
 long int b, c;
 
 char start = 0;   //   OFF = 0
@@ -125,8 +128,8 @@ int main (void)
    
    do
    {
-      delay(10);
-      
+      delay(100);
+      //printf("%f\t%f   %f\n",I,speed_real,consigne);
    }while(1);
 
    return 0;
@@ -134,7 +137,7 @@ int main (void)
 
 void *thread_1(void *arg)
 {
-   float P, I = I_INIT, D;
+   float P, D;
 
    //float tab_mean[MEAN_COMMAND] = {0.0}, sum, temp;
 
@@ -175,9 +178,9 @@ void *thread_1(void *arg)
       {
          I = INTEGRATE_MAX;
       }
-      else if ( I < COMMANDE_MIN )
+      else if ( I < INTEGRATE_MIN )
       {
-         I = COMMANDE_MIN;
+         I = INTEGRATE_MIN;
       }
 
       D = (Kd / Te) * (erreur - erreur_prev);
@@ -229,7 +232,8 @@ void *thread_1(void *arg)
       else
       {
          pwmWrite (1, (int)COMMANDE_MIN) ;
-         I = I_INIT;
+         //I = I_INIT;
+         if( consigne > 0.0)  I = (A_I_Init * consigne) + B_I_Init;
          start = 0;
       }
       
@@ -348,12 +352,14 @@ void *thread_4(void *arg)
       if (digitalRead(27)==0)
       {
          consigne += 1.0*COMMANDE_INC;
+         if( consigne > 0.0)  I = (A_I_Init * consigne) + B_I_Init;
       }
       else
       {      
          if (digitalRead(26)==0)
          {
             consigne -= 1.0*COMMANDE_INC;
+            if( consigne > 0.0)  I = (A_I_Init * consigne) + B_I_Init;
          }
       }
       
