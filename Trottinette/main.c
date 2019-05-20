@@ -59,7 +59,7 @@ long int b, c;
 char start = 0;   //   OFF = 0
                   //   ON  = 1;
 
-char state = 1, state_previous = 1;    //   OFF = 1
+char state = 0, state_previous = 1;    //   OFF = 1
                                        //   ON  = 0;
 //FILE* fichier = NULL;
 
@@ -100,6 +100,8 @@ int main (void)
    erreur_prev_prev = 0.0;
    
    speed_real = 0.0;
+   
+   I = (A_I_Init * consigne) + B_I_Init;
          
    if(pthread_create(&thread1, NULL, thread_1, NULL) == -1) {
    perror("pthread_create");
