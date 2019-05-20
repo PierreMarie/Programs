@@ -169,7 +169,15 @@ void *thread_1(void *arg)
       
       P = Kp * erreur;
       
-      if( speed_real >= consigne ) start = 1;
+      if( speed_real >= consigne )
+      {
+         start = 1;
+      }
+      else if( speed_real < 1.0 )
+      {
+         start = 0;
+         I = (A_I_Init * consigne) + B_I_Init;
+      }
 
       if( (start == 1) && (commande < COMMANDE_MAX) && (state == 0) )
       {
