@@ -19,6 +19,8 @@
 #define I_INIT 700.0
 #define INTEGRATE_MAX 1000.0
 #define INTEGRATE_MIN 500.0
+#define BOOST_INTEGRATE 5.0
+#define THRESHOLD_BOOST_INTEGRATE 1.0
 
 // D
 #define DERIV_MAX 1000.0
@@ -181,7 +183,10 @@ void *thread_1(void *arg)
 
       if( (start == 1) && (commande < COMMANDE_MAX) && (state == 0) )
       {
-         I += Ki * Te * erreur;
+         //I += Ki * Te * erreur;
+         
+         if( erreur > THRESHOLD_BOOST_INTEGRATE )  I += BOOST_INTEGRATE * Ki * Te * erreur;
+         else                                      I += Ki * Te * erreur;
       }
 
       if ( I > INTEGRATE_MAX )
