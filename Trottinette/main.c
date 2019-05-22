@@ -4,23 +4,33 @@
 
 #include "wiringPi.h"
 
+/// ******************************** /// INTEGRATOR PREDICTION
+// Slope detection
+#define SIZE_TAB_PREDICT 200
+#define GAIN_PREDICT 1000.0
+
+// Temporary gain increase
+#define BOOST_INTEGRATE 5.0
+#define BOOST_DESINTEGRATE 2.0
+#define THRESHOLD_BOOST_INTEGRATE 0.3
+
+// Initial values integrator
+#define A_I_Init 5.45
+#define B_I_Init 639.0
+
+// Integrator clipping
+#define INTEGRATE_MAX 1000.0
+#define INTEGRATE_MIN 600.0
+
+// System parameters
 #define K_osc 100.0
 #define T_osc 5.0
-                                       // Ziegler & Nichols pour K_osc = 100 & T_osc = 5
+
+// Ziegler & Nichols values for PID, with K_osc = 100 & T_osc = 5
 #define Kp (0.6*K_osc)                 // 60
 //#define Ki (0.6*K_osc*2.0)/T_osc     // 24
 #define Ki 2.0
 #define Kd (0.6*K_osc*T_osc)/8.0       // 37.5
-
-#define A_I_Init 5.45
-#define B_I_Init 639.0
-
-// I
-#define I_INIT 700.0
-#define INTEGRATE_MAX 1000.0
-#define INTEGRATE_MIN 500.0
-#define BOOST_INTEGRATE 5.0
-#define THRESHOLD_BOOST_INTEGRATE 1.0
 
 // D
 #define DERIV_MAX 1000.0
@@ -55,7 +65,9 @@ void *thread_3(void *arg);
 void *thread_4(void *arg);
 void *thread_5(void *arg);
 
-float speed_real, erreur, erreur_prev, erreur_prev_prev, commande, consigne, I = I_INIT;
+float speed_real, erreur, erreur_prev, erreur_prev_prev, commande, consigne, I;
+float tab_predict[SIZE_TAB_PREDICT] = {0.0}, mean_predict, sum_predict;
+
 long int b, c;
 
 char start = 0;   //   OFF = 0
@@ -133,7 +145,8 @@ int main (void)
    do
    {
       delay(100);
-      //printf("%f\t%f   %f\n",I,speed_real,consigne);
+      //printf("%.0f\t%.1f\t%.0f\t%.10f\n",I,speed_real,consigne,mean_predict);
+      
    }while(1);
 
    return 0;
@@ -142,6 +155,7 @@ int main (void)
 void *thread_1(void *arg)
 {
    float P, D;
+   int i;
 
    //float tab_mean[MEAN_COMMAND] = {0.0}, sum, temp;
 
@@ -171,6 +185,22 @@ void *thread_1(void *arg)
       
       P = Kp * erreur;
       
+      sum_predict = 0.0;
+      
+      for( i=0; i<SIZE_TAB_PREDICT-1; i++ )
+      {
+         tab_predict[i] = tab_predict[i+1];
+      }
+
+      for( i=0; i<SIZE_TAB_PREDICT-1; i++ )
+      {
+         sum_predict += tab_predict[i+1] - tab_predict[i];
+      }
+     
+      tab_predict[SIZE_TAB_PREDICT-1] = speed_real;
+      
+      mean_predict = GAIN_PREDICT * (sum_predict / (SIZE_TAB_PREDICT - 1.0));
+      
       if( speed_real >= consigne )
       {
          start = 1;
@@ -183,10 +213,9 @@ void *thread_1(void *arg)
 
       if( (start == 1) && (commande < COMMANDE_MAX) && (state == 0) )
       {
-         //I += Ki * Te * erreur;
-         
-         if( erreur > THRESHOLD_BOOST_INTEGRATE )  I += BOOST_INTEGRATE * Ki * Te * erreur;
-         else                                      I += Ki * Te * erreur;
+         if(      erreur > THRESHOLD_BOOST_INTEGRATE )   I+= BOOST_INTEGRATE * Ki * Te * erreur;
+         else if( erreur < THRESHOLD_BOOST_INTEGRATE )   I+= BOOST_DESINTEGRATE * Ki * Te * erreur;
+         else                                            I+= Ki * Te * erreur;
       }
 
       if ( I > INTEGRATE_MAX )
