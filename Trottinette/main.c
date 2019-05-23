@@ -145,7 +145,7 @@ int main (void)
    do
    {
       delay(100);
-      //printf("%.0f\t%.1f\t%.0f\t%.10f\n",I,speed_real,consigne,mean_predict);
+      //printf("%.0f\t%.1f\t%.0f\t%.1f\n",I,speed_real,consigne,mean_predict);
       
    }while(1);
 
@@ -213,9 +213,57 @@ void *thread_1(void *arg)
 
       if( (start == 1) && (commande < COMMANDE_MAX) && (state == 0) )
       {
-         if(      erreur > THRESHOLD_BOOST_INTEGRATE )   I+= BOOST_INTEGRATE * Ki * Te * erreur;
+         if( mean_predict > 0.0)       // Speed is increasing
+         {
+            if( abs( erreur ) < 1.0 )
+            {
+               if( abs(mean_predict) < 1.0 )   I+= Ki * Te * erreur;
+            }
+            else if( abs( erreur ) < 2.0 )
+            {
+               if( abs(mean_predict) < 2.0 )   I+= Ki * Te * erreur;
+            }
+            else if( abs( erreur ) < 3.0 )
+            {
+               if( abs(mean_predict) < 3.0 )   I+= Ki * Te * erreur;
+            }
+            else if( abs( erreur ) < 4.0 )
+            {
+               if( abs(mean_predict) < 4.0 )   I+= Ki * Te * erreur;
+            }
+            else
+            {
+               I+= Ki * Te * erreur;
+            }
+         }
+            
+         if( mean_predict < 0.0)       // Speed is decreasing
+         {
+            if( abs( erreur ) < 4.0 )
+            {
+               if( abs(mean_predict) > 4.0 )   I+= abs(Ki * Te * erreur);
+            }
+            else if( abs( erreur ) < 3.0 )
+            {
+               if( abs(mean_predict) < 3.0 )   I+= abs(Ki * Te * erreur);
+            }
+            else if( abs( erreur ) < 2.0 )
+            {
+               if( abs(mean_predict) < 2.0 )   I+= abs(Ki * Te * erreur);
+            }
+            else if( abs( erreur ) < 1.0 )
+            {
+               if( abs(mean_predict) < 1.0 )   I+= abs(Ki * Te * erreur);
+            }
+            else
+            {
+               I+= Ki * Te * erreur;
+            }
+         }
+      
+         /* if(      erreur > THRESHOLD_BOOST_INTEGRATE )I+= BOOST_INTEGRATE * Ki * Te * erreur;
          else if( erreur < THRESHOLD_BOOST_INTEGRATE )   I+= BOOST_DESINTEGRATE * Ki * Te * erreur;
-         else                                            I+= Ki * Te * erreur;
+         else                                            I+= Ki * Te * erreur; */
       }
 
       if ( I > INTEGRATE_MAX )
