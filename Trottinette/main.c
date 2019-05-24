@@ -241,19 +241,19 @@ void *thread_1(void *arg)
          {
             if( abs( erreur ) < 4.0 )
             {
-               if( abs(mean_predict) > 4.0 )   I+= abs(Ki * Te * erreur);
+               if( abs(mean_predict) > 2.0 )   I+= abs(Ki * Te * erreur);
             }
             else if( abs( erreur ) < 3.0 )
             {
-               if( abs(mean_predict) < 3.0 )   I+= abs(Ki * Te * erreur);
+               if( abs(mean_predict) > 1.5 )   I+= abs(Ki * Te * erreur);
             }
             else if( abs( erreur ) < 2.0 )
             {
-               if( abs(mean_predict) < 2.0 )   I+= abs(Ki * Te * erreur);
+               if( abs(mean_predict) > 1.0 )   I+= abs(Ki * Te * erreur);
             }
             else if( abs( erreur ) < 1.0 )
             {
-               if( abs(mean_predict) < 1.0 )   I+= abs(Ki * Te * erreur);
+               if( abs(mean_predict) > 0.5 )   I+= abs(Ki * Te * erreur);
             }
             else
             {
