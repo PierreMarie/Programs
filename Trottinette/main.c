@@ -205,7 +205,7 @@ void *thread_1(void *arg)
       {
          start = 1;
       }
-      else if( speed_real < 1.0 )
+      else if( speed_real < 2.0 )
       {
          start = 0;
          I = (A_I_Init * consigne) + B_I_Init;
