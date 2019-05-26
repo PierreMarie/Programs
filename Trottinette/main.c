@@ -7,6 +7,12 @@
 // Slope detection
 #define SIZE_TAB_PREDICT 200
 #define GAIN_PREDICT 1000.0
+#define ERROR_INCREASE 5.0
+#define ERROR_DECREASE 3.0
+#define MEAN_INCREASE 1.0
+#define MEAN_DECREASE 1.0
+#define SUB_INCREASE 1.0
+#define ADD_DECREASE 2.0
 
 // Temporary gain increase
 #define BOOST_INTEGRATE 5.0
@@ -19,7 +25,7 @@
 
 // Integrator clipping
 #define INTEGRATE_MAX 1000.0
-#define INTEGRATE_MIN 600.0
+#define INTEGRATE_MIN 400.0
 
 // System parameters
 #define K_osc 100.0
@@ -28,8 +34,9 @@
 // Ziegler & Nichols values for PID, with K_osc = 100 & T_osc = 5
 #define Kp (0.6*K_osc)                 // 60
 //#define Ki (0.6*K_osc*2.0)/T_osc     // 24
-#define Ki 2.0
+#define Ki 5.0                         // 2
 #define Kd (0.6*K_osc*T_osc)/8.0       // 37.5
+//#define Kd 0.0
 
 // D
 #define DERIV_MAX 1000.0
@@ -64,7 +71,7 @@ void *thread_3(void *arg);
 void *thread_4(void *arg);
 void *thread_5(void *arg);
 
-float speed_real, erreur, erreur_prev, erreur_prev_prev, commande, consigne, I;
+float speed_real, erreur, erreur_prev, erreur_prev_prev, commande, consigne, I,D = 0.0;
 float tab_predict[SIZE_TAB_PREDICT] = {0.0}, mean_predict, sum_predict;
 
 long int b, c;
@@ -144,7 +151,7 @@ int main (void)
    do
    {
       delay(100);
-      //printf("%.0f\t%.1f\t%.0f\t%.1f\n",I,speed_real,consigne,mean_predict);
+      printf("%.0f\t%.0f\t%.1f\t%.0f\t%.1f\n",D,I,speed_real,consigne,mean_predict);
       
    }while(1);
 
@@ -153,7 +160,7 @@ int main (void)
 
 void *thread_1(void *arg)
 {
-   float P, D;
+   float P;
    int i;
 
    //float tab_mean[MEAN_COMMAND] = {0.0}, sum, temp;
@@ -209,50 +216,45 @@ void *thread_1(void *arg)
          start = 0;
          I = (A_I_Init * consigne) + B_I_Init;
       }
-
+      
+      start = 1;
+      
       if( (start == 1) && (commande < COMMANDE_MAX) && (state == 0) )
       {
-         if( mean_predict > 0.0)       // Speed is increasing
+         if( mean_predict >= 0.0 )            // Speed is increasing
          {
-            if( abs( erreur ) < 1.0 )
+            if( abs( erreur ) < ERROR_INCREASE )
             {
-               if( abs(mean_predict) < 1.0 )   I+= Ki * Te * erreur;
-            }
-            else if( abs( erreur ) < 2.0 )
-            {
-               if( abs(mean_predict) < 2.0 )   I+= Ki * Te * erreur;
-            }
-            else if( abs( erreur ) < 3.0 )
-            {
-               if( abs(mean_predict) < 3.0 )   I+= Ki * Te * erreur;
-            }
-            else if( abs( erreur ) < 4.0 )
-            {
-               if( abs(mean_predict) < 4.0 )   I+= Ki * Te * erreur;
+               if( abs(mean_predict) > MEAN_INCREASE )
+               {
+                  //printf("HIGH CLIPPING\n");
+                  //I-=SUB_INCREASE * abs(Ki * Te * erreur);
+                  I-=SUB_INCREASE;
+	       }
+               else
+               {
+                  I+= Ki * Te * erreur;
+               }
             }
             else
             {
                I+= Ki * Te * erreur;
             }
          }
-            
-         if( mean_predict < 0.0)       // Speed is decreasing
+         else if( mean_predict < 0.0)             // Speed is decreasing
          {
-            if( abs( erreur ) < 4.0 )
+            if( abs( erreur ) < ERROR_DECREASE )
             {
-               if( abs(mean_predict) > 2.0 )   I+= abs(Ki * Te * erreur);
-            }
-            else if( abs( erreur ) < 3.0 )
-            {
-               if( abs(mean_predict) > 1.5 )   I+= abs(Ki * Te * erreur);
-            }
-            else if( abs( erreur ) < 2.0 )
-            {
-               if( abs(mean_predict) > 1.0 )   I+= abs(Ki * Te * erreur);
-            }
-            else if( abs( erreur ) < 1.0 )
-            {
-               if( abs(mean_predict) > 0.5 )   I+= abs(Ki * Te * erreur);
+               if( abs(mean_predict) > MEAN_DECREASE )
+               {
+                  //printf("LOW CLIPPING\n");
+                  // I+=ADD_DECREASE * abs(Ki * Te * erreur);
+                  I+=ADD_DECREASE;
+               }
+               else
+               {
+                  I+= Ki * Te * erreur;
+               }
             }
             else
             {
@@ -260,7 +262,7 @@ void *thread_1(void *arg)
             }
          }
       
-         /* if(      erreur > THRESHOLD_BOOST_INTEGRATE )I+= BOOST_INTEGRATE * Ki * Te * erreur;
+         /* if( erreur > THRESHOLD_BOOST_INTEGRATE )     I+= BOOST_INTEGRATE * Ki * Te * erreur;
          else if( erreur < THRESHOLD_BOOST_INTEGRATE )   I+= BOOST_DESINTEGRATE * Ki * Te * erreur;
          else                                            I+= Ki * Te * erreur; */
       }
