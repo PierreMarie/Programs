@@ -3,16 +3,22 @@
 #include <pthread.h>
 #include "wiringPi.h"
 
+// Ziegler & Nichols values for PID, with K_osc = 100 & T_osc = 5
+#define Kp (0.6*K_osc)                 // 60
+#define Ki (0.6*K_osc*2.0)/T_osc       // 24
+//#define Kd (0.6*K_osc*T_osc)/8.0     // 37.5
+#define Kd 0.4
+
 /// ******************************** /// INTEGRATOR PREDICTION
 // Slope detection
 #define SIZE_TAB_PREDICT 200
 #define GAIN_PREDICT 1000.0
-#define ERROR_INCREASE 5.0
+#define ERROR_INCREASE 3.0
 #define ERROR_DECREASE 3.0
-#define MEAN_INCREASE 1.0
-#define MEAN_DECREASE 1.0
-#define SUB_INCREASE 1.0
-#define ADD_DECREASE 2.0
+#define MEAN_INCREASE 3.0
+#define MEAN_DECREASE 3.0
+#define SUB_INCREASE 0.2
+#define ADD_DECREASE 0.2
 
 // Temporary gain increase
 #define BOOST_INTEGRATE 5.0
@@ -25,18 +31,11 @@
 
 // Integrator clipping
 #define INTEGRATE_MAX 1000.0
-#define INTEGRATE_MIN 400.0
+#define INTEGRATE_MIN 300.0
 
 // System parameters
 #define K_osc 100.0
 #define T_osc 5.0
-
-// Ziegler & Nichols values for PID, with K_osc = 100 & T_osc = 5
-#define Kp (0.6*K_osc)                 // 60
-//#define Ki (0.6*K_osc*2.0)/T_osc     // 24
-#define Ki 5.0                         // 2
-#define Kd (0.6*K_osc*T_osc)/8.0       // 37.5
-//#define Kd 0.0
 
 // D
 #define DERIV_MAX 1000.0
@@ -71,7 +70,7 @@ void *thread_3(void *arg);
 void *thread_4(void *arg);
 void *thread_5(void *arg);
 
-float speed_real, erreur, erreur_prev, erreur_prev_prev, commande, consigne, I,D = 0.0;
+float speed_real, erreur, erreur_prev, erreur_prev_prev, commande, consigne, P, I, D = 0.0;
 float tab_predict[SIZE_TAB_PREDICT] = {0.0}, mean_predict, sum_predict;
 
 long int b, c;
@@ -151,7 +150,7 @@ int main (void)
    do
    {
       delay(100);
-      printf("%.0f\t%.0f\t%.1f\t%.0f\t%.1f\n",D,I,speed_real,consigne,mean_predict);
+      printf("%.0f\t%.0f\t%.0f\t%.1f\t%.0f\n",P,I,D,speed_real,consigne);
       
    }while(1);
 
@@ -160,7 +159,6 @@ int main (void)
 
 void *thread_1(void *arg)
 {
-   float P;
    int i;
 
    //float tab_mean[MEAN_COMMAND] = {0.0}, sum, temp;
@@ -203,25 +201,26 @@ void *thread_1(void *arg)
          sum_predict += tab_predict[i+1] - tab_predict[i];
       }
      
-      tab_predict[SIZE_TAB_PREDICT-1] = speed_real;
+      //tab_predict[SIZE_TAB_PREDICT-1] = speed_real;
+      tab_predict[SIZE_TAB_PREDICT-1] = erreur;
       
       mean_predict = GAIN_PREDICT * (sum_predict / (SIZE_TAB_PREDICT - 1.0));
       
-      if( speed_real >= consigne )
+      if( speed_real >= (consigne-0.5) )
       {
          start = 1;
       }
-      else if( speed_real < 2.0 )
+      else if( speed_real < 3.0 )
       {
          start = 0;
          I = (A_I_Init * consigne) + B_I_Init;
       }
       
-      start = 1;
+      //start = 1;
       
       if( (start == 1) && (commande < COMMANDE_MAX) && (state == 0) )
       {
-         if( mean_predict >= 0.0 )            // Speed is increasing
+         /*if( mean_predict >= 0.0 )            // Speed is increasing
          {
             if( abs( erreur ) < ERROR_INCREASE )
             {
@@ -230,7 +229,7 @@ void *thread_1(void *arg)
                   //printf("HIGH CLIPPING\n");
                   //I-=SUB_INCREASE * abs(Ki * Te * erreur);
                   I-=SUB_INCREASE;
-	       }
+               }
                else
                {
                   I+= Ki * Te * erreur;
@@ -260,7 +259,9 @@ void *thread_1(void *arg)
             {
                I+= Ki * Te * erreur;
             }
-         }
+         }*/
+         
+         I+= Ki * Te * erreur;
       
          /* if( erreur > THRESHOLD_BOOST_INTEGRATE )     I+= BOOST_INTEGRATE * Ki * Te * erreur;
          else if( erreur < THRESHOLD_BOOST_INTEGRATE )   I+= BOOST_DESINTEGRATE * Ki * Te * erreur;
@@ -276,7 +277,9 @@ void *thread_1(void *arg)
          I = INTEGRATE_MIN;
       }
 
-      D = (Kd / Te) * (erreur - erreur_prev);
+      //D = (Kd / Te) * (erreur - erreur_prev);
+      
+      D = (Kd / Te) * mean_predict;
       
       if( abs(D) > DERIV_MAX )
       {
@@ -456,7 +459,7 @@ void *thread_4(void *arg)
          }
       }
       
-      if (consigne < COMMANDE_INC) consigne = COMMANDE_INC;
+      if (consigne < 3.0) consigne = 3.0;
 
       delay(500);
    
