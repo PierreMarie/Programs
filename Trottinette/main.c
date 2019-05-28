@@ -140,7 +140,7 @@ int main (void)
    do
    {
       delay(100);
-      printf("%.0f\t%.0f\t%.0f\t%.1f\t%.0f\n",P,I,D,speed_real,consigne);
+      //printf("%.0f\t%.0f\t%.0f\t%.1f\t%.0f\n",P,I,D,speed_real,consigne);
       
    }while(1);
 
