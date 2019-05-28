@@ -7,7 +7,7 @@
 #define Kp (0.6*K_osc)                 // 60
 #define Ki (0.6*K_osc*2.0)/T_osc       // 24
 //#define Kd (0.6*K_osc*T_osc)/8.0     // 37.5
-#define Kd 0.4
+#define Kd 0.3
 
 /// ******************************** /// INTEGRATOR PREDICTION
 // Slope detection
@@ -38,7 +38,7 @@
 #define COMMANDE_MIN 500            // 2.69V
 #define COMMANDE_MAX 1023           // 4.40V
       
-#define COMMANDE_INC 2.0
+#define COMMANDE_INC 1.5
 #define MAX_COUNT 1000.0/15.0       // 1 tr/s
 #define LOOP_DURATION 1.0
 #define GAIN_TEMPO LOOP_DURATION * 1000.0 / 15.0
@@ -199,7 +199,7 @@ void *thread_1(void *arg)
       {
          start = 1;
       }
-      else if( speed_real < 3.0 )
+      else if( speed_real < 2.0 )
       {
          start = 0;
          I = (A_I_Init * consigne) + B_I_Init;
@@ -396,7 +396,7 @@ void *thread_4(void *arg)
          }
       }
       
-      if (consigne < 3.0) consigne = 3.0;
+      if (consigne < 2.0) consigne = 2.0;
 
       delay(POLLING_CHANGE_REFERENCE);
    
