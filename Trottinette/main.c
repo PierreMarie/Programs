@@ -13,17 +13,6 @@
 // Slope detection
 #define SIZE_TAB_PREDICT 200
 #define GAIN_PREDICT 1000.0
-#define ERROR_INCREASE 3.0
-#define ERROR_DECREASE 3.0
-#define MEAN_INCREASE 3.0
-#define MEAN_DECREASE 3.0
-#define SUB_INCREASE 0.2
-#define ADD_DECREASE 0.2
-
-// Temporary gain increase
-#define BOOST_INTEGRATE 5.0
-#define BOOST_DESINTEGRATE 2.0
-#define THRESHOLD_BOOST_INTEGRATE 0.3
 
 // Initial values integrator
 #define A_I_Init 5.45
@@ -33,12 +22,12 @@
 #define INTEGRATE_MAX 1000.0
 #define INTEGRATE_MIN 300.0
 
+// Derivator clipping
+#define DERIV_MAX 1000.0
+
 // System parameters
 #define K_osc 100.0
 #define T_osc 5.0
-
-// D
-#define DERIV_MAX 1000.0
 
 #define INC_START 1.0
 #define TEMPO_START INC_START * 10.0
@@ -49,11 +38,12 @@
 #define COMMANDE_MIN 500            // 2.69V
 #define COMMANDE_MAX 1023           // 4.40V
       
-#define COMMANDE_INC 1.0
+#define COMMANDE_INC 2.0
 #define MAX_COUNT 1000.0/15.0       // 1 tr/s
 #define LOOP_DURATION 1.0
 #define GAIN_TEMPO LOOP_DURATION * 1000.0 / 15.0
 #define PERIODE_ECH 10
+#define POLLING_CHANGE_REFERENCE 300
 #define MAX_STR 10
 #define Te 0.01
 
@@ -70,8 +60,8 @@ void *thread_3(void *arg);
 void *thread_4(void *arg);
 void *thread_5(void *arg);
 
-float speed_real, erreur, erreur_prev, erreur_prev_prev, commande, consigne, P, I, D = 0.0;
-float tab_predict[SIZE_TAB_PREDICT] = {0.0}, mean_predict, sum_predict;
+float speed_real, erreur, erreur_prev, erreur_prev_prev, commande, consigne, P = 0.0, I = 0.0, D = 0.0;
+float tab_predict[SIZE_TAB_PREDICT] = {0.0}, mean_predict = 0.0, sum_predict = 0.0;
 
 long int b, c;
 
@@ -201,7 +191,6 @@ void *thread_1(void *arg)
          sum_predict += tab_predict[i+1] - tab_predict[i];
       }
      
-      //tab_predict[SIZE_TAB_PREDICT-1] = speed_real;
       tab_predict[SIZE_TAB_PREDICT-1] = erreur;
       
       mean_predict = GAIN_PREDICT * (sum_predict / (SIZE_TAB_PREDICT - 1.0));
@@ -215,57 +204,10 @@ void *thread_1(void *arg)
          start = 0;
          I = (A_I_Init * consigne) + B_I_Init;
       }
-      
-      //start = 1;
-      
-      if( (start == 1) && (commande < COMMANDE_MAX) && (state == 0) )
+            
+      if( (start == 1) && (commande < COMMANDE_MAX) )
       {
-         /*if( mean_predict >= 0.0 )            // Speed is increasing
-         {
-            if( abs( erreur ) < ERROR_INCREASE )
-            {
-               if( abs(mean_predict) > MEAN_INCREASE )
-               {
-                  //printf("HIGH CLIPPING\n");
-                  //I-=SUB_INCREASE * abs(Ki * Te * erreur);
-                  I-=SUB_INCREASE;
-               }
-               else
-               {
-                  I+= Ki * Te * erreur;
-               }
-            }
-            else
-            {
-               I+= Ki * Te * erreur;
-            }
-         }
-         else if( mean_predict < 0.0)             // Speed is decreasing
-         {
-            if( abs( erreur ) < ERROR_DECREASE )
-            {
-               if( abs(mean_predict) > MEAN_DECREASE )
-               {
-                  //printf("LOW CLIPPING\n");
-                  // I+=ADD_DECREASE * abs(Ki * Te * erreur);
-                  I+=ADD_DECREASE;
-               }
-               else
-               {
-                  I+= Ki * Te * erreur;
-               }
-            }
-            else
-            {
-               I+= Ki * Te * erreur;
-            }
-         }*/
-         
          I+= Ki * Te * erreur;
-      
-         /* if( erreur > THRESHOLD_BOOST_INTEGRATE )     I+= BOOST_INTEGRATE * Ki * Te * erreur;
-         else if( erreur < THRESHOLD_BOOST_INTEGRATE )   I+= BOOST_DESINTEGRATE * Ki * Te * erreur;
-         else                                            I+= Ki * Te * erreur; */
       }
 
       if ( I > INTEGRATE_MAX )
@@ -278,7 +220,6 @@ void *thread_1(void *arg)
       }
 
       //D = (Kd / Te) * (erreur - erreur_prev);
-      
       D = (Kd / Te) * mean_predict;
       
       if( abs(D) > DERIV_MAX )
@@ -318,9 +259,6 @@ void *thread_1(void *arg)
             
       if( state == 0 )
       {
-         //if( start == 1 )  pwmWrite (1, (int)COMMANDE_MAX);
-         //else              pwmWrite (1, (int)temp);
-         
          pwmWrite (1, (int)commande);
 
          //fprintf(fichier, "%.1f;%.1f;%.1f;%.1f;%.1f;%.1f\n", speed_real, temp, consigne, P, I, D);
@@ -328,7 +266,6 @@ void *thread_1(void *arg)
       else
       {
          pwmWrite (1, (int)COMMANDE_MIN) ;
-         //I = I_INIT;
          if( consigne > 0.0)  I = (A_I_Init * consigne) + B_I_Init;
          start = 0;
       }
@@ -461,7 +398,7 @@ void *thread_4(void *arg)
       
       if (consigne < 3.0) consigne = 3.0;
 
-      delay(500);
+      delay(POLLING_CHANGE_REFERENCE);
    
    }while(1);
    
