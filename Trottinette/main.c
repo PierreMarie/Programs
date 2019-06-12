@@ -4,8 +4,12 @@
 #include "wiringPi.h"
 
 // Slope detection
-#define SIZE_TAB_PREDICT 200
+#define SIZE_TAB_PREDICT 400
 #define GAIN_PREDICT 1000.0
+
+// System parameters
+#define K_osc 100.0
+#define T_osc 10.0
 
 // Ziegler & Nichols values for PID, with K_osc = 100 & T_osc = 10
 #define Kp (0.6*K_osc)                                // 60
@@ -13,7 +17,7 @@
 #define Ki (0.6*K_osc*2.0)/T_osc                      // 12
 //#define Ki 10.0
 
-#define Kd (0.6*K_osc*T_osc)/(8.0*1.0)   // 75 => 0.375
+#define Kd (0.6*K_osc*T_osc)/(8.0*SIZE_TAB_PREDICT)   // 75 => 0.375
 //#define Kd 0.3
 
 // Initial values integrator
@@ -27,10 +31,6 @@
 // Derivator clipping
 #define DERIV_MAX 300.0
 
-// System parameters
-#define K_osc 100.0
-#define T_osc 10.0
-
 #define MEAN 10
 #define MEAN_COMMAND 1
 #define CONSIGNE_INIT 5.0
@@ -41,7 +41,6 @@
 #define MAX_COUNT 1000.0/15.0       // 1 tr/s
 #define LOOP_DURATION 1.0
 #define GAIN_TEMPO LOOP_DURATION * 1000.0 / 15.0
-#define PERIODE_ECH 5
 #define POLLING_CHANGE_REFERENCE 100
 #define MAX_STR 10
 #define Te 0.005
@@ -83,8 +82,8 @@ int main (void)
 
    pinMode (24, INPUT) ;            // Speed measurement
    
-   pinMode (3, OUTPUT) ;            // Start / Stop regulation
-   pullUpDnControl (3, PUD_DOWN);
+   //pinMode (3, OUTPUT) ;            // Start / Stop regulation
+   //pullUpDnControl (3, PUD_DOWN);
    
    pinMode (27, INPUT) ;            // Increase speed
    pullUpDnControl (27, PUD_UP);
@@ -134,7 +133,7 @@ int main (void)
    do
    {
       delay(100);
-      //printf("%.0f\t%.0f\t%.0f\t%.1f\t%.1f\n",P,I,D,speed_real,consigne);
+      printf("%.0f\t%.0f\t%.0f\t%.1f\t%.1f\n",P,I,D,speed_real,consigne);
       
    }while(1);
 
@@ -150,7 +149,7 @@ void *thread_1(void *arg)
    //int i;
       
    //printf("En attente du dÃ©marrage du moteur ...\n");
-   //printf("\nKp : %f\t\tKi : %f\t\tKd : %f\n\n", KPIDp, KPIDi, KPIDd);
+   //printf("\nKp : %f\t\tKi : %f\t\tKd : %f\n\n", Kp, Ki, Kd);
    
    ///********************************************************///   TEST DEAD LOCK
    do
@@ -177,21 +176,20 @@ void *thread_1(void *arg)
       
       for( i=0; i<SIZE_TAB_PREDICT-1; i++ )
       {
-         sum_predict += tab_predict[i];
+         //sum_predict += tab_predict[i+1] - tab_predict[i];
+         //sum_predict += tab_predict[i];
          tab_predict[i] = tab_predict[i+1];
       }
-      
-      sum_predict += tab_predict[i];
 
-      /* for( i=0; i<SIZE_TAB_PREDICT-1; i++ )
+      for( i=0; i<SIZE_TAB_PREDICT-1; i++ )
       {
          sum_predict += tab_predict[i+1] - tab_predict[i];
-      } */
+      }
      
       tab_predict[SIZE_TAB_PREDICT-1] = erreur;
       
-      //mean_predict = GAIN_PREDICT * (sum_predict / (SIZE_TAB_PREDICT - 1.0));
-      mean_predict = sum_predict / (SIZE_TAB_PREDICT * 1.0);
+      mean_predict = GAIN_PREDICT * (sum_predict / (SIZE_TAB_PREDICT - 1.0));
+      //mean_predict = sum_predict / (SIZE_TAB_PREDICT * 1.0);
       
       if( speed_real >= (consigne-1.0) )
       {
@@ -261,7 +259,7 @@ void *thread_1(void *arg)
       
       erreur_prev = erreur;
       
-      delay(PERIODE_ECH);
+      delay(Te * 1000.0);
    
    }while(1);
    
@@ -335,8 +333,8 @@ void *thread_2(void *arg)
          else speed_real = (float)GAIN_TEMPO/(1.0*temp);
       }
       
-      if( a==1 )    b++;
-      else       c++;   
+      if( a==1 )  b++;
+      else        c++;   
       
       prev = a;
       delay(LOOP_DURATION);
