@@ -13,7 +13,7 @@
 #define Ki (0.6*K_osc*2.0)/T_osc                      // 12
 //#define Ki 10.0
 
-#define Kd (0.6*K_osc*T_osc)/(8.0*SIZE_TAB_PREDICT)   // 75 => 0.375
+#define Kd (0.6*K_osc*T_osc)/(8.0*1.0)   // 75 => 0.375
 //#define Kd 0.3
 
 // Initial values integrator
@@ -177,9 +177,11 @@ void *thread_1(void *arg)
       
       for( i=0; i<SIZE_TAB_PREDICT-1; i++ )
       {
-         sum_predict += tab_predict[i+1] - tab_predict[i];
+         sum_predict += tab_predict[i];
          tab_predict[i] = tab_predict[i+1];
       }
+      
+      sum_predict += tab_predict[i];
 
       /* for( i=0; i<SIZE_TAB_PREDICT-1; i++ )
       {
@@ -188,7 +190,8 @@ void *thread_1(void *arg)
      
       tab_predict[SIZE_TAB_PREDICT-1] = erreur;
       
-      mean_predict = GAIN_PREDICT * (sum_predict / (SIZE_TAB_PREDICT - 1.0));
+      //mean_predict = GAIN_PREDICT * (sum_predict / (SIZE_TAB_PREDICT - 1.0));
+      mean_predict = sum_predict / (SIZE_TAB_PREDICT * 1.0);
       
       if( speed_real >= (consigne-1.0) )
       {
