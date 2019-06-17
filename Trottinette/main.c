@@ -4,7 +4,7 @@
 #include "wiringPi.h"
 
 // Slope detection
-#define SIZE_TAB_PREDICT 400
+#define SIZE_TAB_PREDICT 300
 #define GAIN_PREDICT 1000.0
 
 // System parameters
@@ -37,7 +37,7 @@
 #define COMMANDE_MIN 500            // 2.69V
 #define COMMANDE_MAX 1023           // 4.40V
       
-#define COMMANDE_INC 1.0
+#define COMMANDE_INC 1.5
 #define MAX_COUNT 1000.0/15.0       // 1 tr/s
 #define LOOP_DURATION 1.0
 #define GAIN_TEMPO LOOP_DURATION * 1000.0 / 15.0
@@ -133,7 +133,7 @@ int main (void)
    do
    {
       delay(100);
-      printf("%.0f\t%.0f\t%.0f\t%.1f\t%.1f\n",P,I,D,speed_real,consigne);
+//      printf("%.0f\t%.0f\t%.0f\t%.1f\t%.1f\n",P,I,D,speed_real,consigne);
       
    }while(1);
 
@@ -353,24 +353,12 @@ void *thread_3(void *arg)
    {      
       if (digitalRead(27)==0)
       {
-         temp = consigne;
-         temp += COMMANDE_INC;
+         delay(500);
          
-         if( temp >= MIN_SPEED)
-         {
-            consigne = temp;
-            I = (A_I_Init * consigne) + B_I_Init;
-         }
-         
-         while(digitalRead(27)==0);
-         delay(1000);
-      }
-      else
-      {      
-         if (digitalRead(26)==0)
+         if (digitalRead(27)==0)
          {
             temp = consigne;
-            temp -= COMMANDE_INC;
+            temp += COMMANDE_INC;
             
             if( temp >= MIN_SPEED)
             {
@@ -378,8 +366,30 @@ void *thread_3(void *arg)
                I = (A_I_Init * consigne) + B_I_Init;
             }
             
-            while(digitalRead(26)==0);
+            while(digitalRead(27)==0);
             delay(1000);
+         }
+      }
+      else
+      {      
+         if (digitalRead(26)==0)
+         {
+            delay(500);
+            
+            if (digitalRead(26)==0)
+            {
+               temp = consigne;
+               temp -= COMMANDE_INC;
+               
+               if( temp >= MIN_SPEED)
+               {
+                  consigne = temp;
+                  I = (A_I_Init * consigne) + B_I_Init;
+               }
+               
+               while(digitalRead(26)==0);
+               delay(1000);
+            }
          }
       }
 
