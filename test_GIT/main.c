@@ -3,5 +3,5 @@
 
 int main (void)
 {
-	int a = 23;
+	int a = 1;
 }
