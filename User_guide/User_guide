@@ -8,6 +8,12 @@ git commit -m "first commit"
 git remote add origin https://github.com/PierreMarie/Programs.git
 git push -u origin master
 
+git merge --abort			When a merge fail
+git checkout master			Switch to branch master
+git branch				To see branches
+git branch new_branch			To create a branch
+
+
 Pour ignorer les modifications locales
 git reset --hard
 
