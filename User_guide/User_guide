@@ -7,6 +7,10 @@ git add README.md
 git commit -m "first commit"
 git remote add origin https://github.com/PierreMarie/Programs.git
 git push -u origin master
+git branch new_branch		Create a branch
+git checkout branch_name	Switch to branch_name branch
+git branch			Display all branches
+git merge --abort		When a merge fail
 
 git merge --abort			When a merge fail
 git checkout master			Switch to branch master
