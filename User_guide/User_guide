@@ -16,6 +16,7 @@ git merge --abort			When a merge fail
 git checkout master			Switch to branch master
 git branch				To see branches
 git branch new_branch			To create a branch
+git branch -d branche1			Delete branch branche1
 
 
 Pour ignorer les modifications locales
