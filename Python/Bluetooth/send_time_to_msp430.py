@@ -34,15 +34,25 @@ try:
             try:
                 from time import gmtime, strftime
 
-                h=int(strftime("%H", gmtime()))+2
+		# SUMMER
+                #h=int(strftime("%H", gmtime()))+2
+                #m=int(strftime("%M", gmtime()))
+                #s=int(strftime("%S", gmtime()))
+
+		#if h == 24:
+		#    h = 0
+
+		#if h == 25:
+		#	h = 1
+
+		# WINTER
+		h=int(strftime("%H", gmtime()))+1
                 m=int(strftime("%M", gmtime()))
                 s=int(strftime("%S", gmtime()))
 
 		if h == 24:
 		    h = 0
 
-		if h == 25:
-			h = 1
 
                 sock.send("%s%s:%s:%s" % ("h","{0:0>2}".format(h),"{0:0>2}".format(m),"{0:0>2}".format(s)))
 	        envoi_reussi = 1
@@ -59,7 +69,7 @@ try:
                 print("Commande envoyee")
                 envoi_reussi = 0
 
-        time.sleep(60)
+        time.sleep(10)
 
 except KeyboardInterrupt:       # If CTRL+C is pressed, exit cleanly:
     sock.close()
