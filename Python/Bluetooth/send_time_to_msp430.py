@@ -69,7 +69,7 @@ try:
                 print("Commande envoyee")
                 envoi_reussi = 0
 
-        time.sleep(10)
+        time.sleep(60)
 
 except KeyboardInterrupt:       # If CTRL+C is pressed, exit cleanly:
     sock.close()
